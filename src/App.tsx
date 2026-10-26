@@ -18,7 +18,6 @@ type Language = 'en' | 'ckb';
 const uiTranslations: Record<string, string> = {
   'Overview':'پوختە', 'Money':'پارە', 'Items':'کەلوپەل', 'Notes':'تێبینییەکان', 'Settings':'ڕێکخستنەکان',
   'WORKSPACE':'بەشی کار', 'Workspace':'شوێنی کار', 'Cloud sync enabled':'هاوکاتکردنی ئۆنلاین چالاکە',
-  'YOUR PERSONAL SPACE':'شوێنی تایبەتی خۆت', 'YOUR DASHBOARD':'داشبۆردی خۆت',
   'Good to see you.':'بەخێربێیتەوە.', 'A clearer picture of everything that matters to you.':'هەموو شتە گرنگەکانت بە ڕوونی ببینە.',
   'Keep your IQD and USD transactions organized.':'مامەڵەکانی دینار و دۆلارت ڕێک بخە.', 'Know what you have, and where it is.':'بزانە چی هەتە و لە کوێیە.',
   'Your thoughts, collected in one place.':'بیر و بیرۆکەکانت لە یەک شوێندا کۆ بکەرەوە.', 'Manage your personal workspace.':'شوێنی کاری تایبەتی خۆت بەڕێوەببە.',
