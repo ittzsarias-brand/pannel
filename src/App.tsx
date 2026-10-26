@@ -1,0 +1,227 @@
+import { useEffect, useMemo, useState } from 'react';
+import type { FormEvent } from 'react';
+import type { Session } from '@supabase/supabase-js';
+import {
+  Activity, ArrowDownLeft, ArrowUpRight, Boxes, Check, ChevronDown, CircleDollarSign,
+  FileText, Home, LogOut, Menu, Plus, Search, Settings, ShieldCheck, Sparkles,
+  TrendingUp, Wallet, X, LoaderCircle,
+} from 'lucide-react';
+import {
+  Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
+} from 'recharts';
+import { isSupabaseConfigured, supabase } from './lib/supabase';
+
+type Tab = 'Overview' | 'Money' | 'Items' | 'Notes' | 'Settings';
+type Currency = 'IQD' | 'USD';
+type Transaction = { id: string; title: string; amount: number; currency: Currency; kind: 'income' | 'expense'; category: string; created_at: string };
+type Item = { id: string; name: string; category: string; quantity: number; location: string; created_at: string };
+type Note = { id: string; title: string; body: string; created_at: string };
+
+const navItems: { name: Tab; icon: typeof Home }[] = [
+  { name: 'Overview', icon: Home }, { name: 'Money', icon: Wallet },
+  { name: 'Items', icon: Boxes }, { name: 'Notes', icon: FileText },
+  { name: 'Settings', icon: Settings },
+];
+const moneyChart = [
+  { day: 'Mon', income: 180000, expense: 90000 }, { day: 'Tue', income: 250000, expense: 120000 },
+  { day: 'Wed', income: 160000, expense: 85000 }, { day: 'Thu', income: 310000, expense: 145000 },
+  { day: 'Fri', income: 220000, expense: 110000 }, { day: 'Sat', income: 360000, expense: 175000 },
+  { day: 'Sun', income: 290000, expense: 125000 },
+];
+const money = (value: number, currency: Currency) => new Intl.NumberFormat('en-US', {
+  style: 'currency', currency, maximumFractionDigits: currency === 'IQD' ? 0 : 2,
+}).format(value);
+const dateLabel = (value: string) => new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
+export default function App() {
+  const [tab, setTab] = useState<Tab>('Overview');
+  const [session, setSession] = useState<Session | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [authMessage, setAuthMessage] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [items, setItems] = useState<Item[]>([]);
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [modal, setModal] = useState<'transaction' | 'item' | 'note' | null>(null);
+  const [search, setSearch] = useState('');
+  const [formError, setFormError] = useState('');
+  const [transactionForm, setTransactionForm] = useState({ title: '', amount: '', currency: 'IQD' as Currency, kind: 'expense' as 'income' | 'expense', category: 'General' });
+  const [itemForm, setItemForm] = useState({ name: '', category: 'General', quantity: '1', location: '' });
+  const [noteForm, setNoteForm] = useState({ title: '', body: '' });
+
+  useEffect(() => {
+    if (!supabase) { setAuthReady(true); return; }
+    supabase.auth.getSession().then(({ data }) => { setSession(data.session); setAuthReady(true); });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, next) => setSession(next));
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!session || !supabase) { setTransactions([]); setItems([]); setNotes([]); return; }
+    let alive = true;
+    const load = async () => {
+      const [t, i, n] = await Promise.all([
+        supabase!.from('transactions').select('*').order('created_at', { ascending: false }),
+        supabase!.from('tracked_items').select('*').order('created_at', { ascending: false }),
+        supabase!.from('notes').select('*').order('created_at', { ascending: false }),
+      ]);
+      if (!alive) return;
+      if (!t.error) setTransactions(t.data as Transaction[]);
+      if (!i.error) setItems(i.data as Item[]);
+      if (!n.error) setNotes(n.data as Note[]);
+    };
+    void load();
+    return () => { alive = false; };
+  }, [session]);
+
+  const totals = useMemo(() => transactions.reduce((acc, t) => {
+    acc[t.currency][t.kind] += Number(t.amount);
+    return acc;
+  }, { IQD: { income: 0, expense: 0 }, USD: { income: 0, expense: 0 } }), [transactions]);
+  const filteredItems = items.filter((item) => (item.name + ' ' + item.category + ' ' + item.location).toLowerCase().includes(search.toLowerCase()));
+  const filteredNotes = notes.filter((note) => (note.title + ' ' + note.body).toLowerCase().includes(search.toLowerCase()));
+  const filteredTransactions = transactions.filter((t) => (t.title + ' ' + t.category + ' ' + t.kind).toLowerCase().includes(search.toLowerCase()));
+
+  const signIn = async (event: FormEvent) => {
+    event.preventDefault(); setBusy(true); setAuthMessage('');
+    if (!supabase) { setBusy(false); setAuthMessage('Supabase is not configured yet. Add the environment variables to enable accounts.'); return; }
+    const result = authMode === 'login'
+      ? await supabase.auth.signInWithPassword({ email, password })
+      : await supabase.auth.signUp({ email, password });
+    setBusy(false);
+    if (result.error) setAuthMessage(result.error.message);
+    else if (authMode === 'signup' && !result.data.session) setAuthMessage('Account created. Check your email to confirm your address, then sign in.');
+    else setAuthMessage('');
+  };
+
+  const saveTransaction = async (event: FormEvent) => {
+    event.preventDefault(); setFormError('');
+    const amount = Number(transactionForm.amount);
+    if (!transactionForm.title.trim() || !Number.isFinite(amount) || amount <= 0) { setFormError('Enter a title and an amount greater than zero.'); return; }
+    if (!supabase || !session) { setFormError('Sign in after configuring Supabase to save data.'); return; }
+    setBusy(true);
+    const result = await supabase.from('transactions').insert({ user_id: session.user.id, title: transactionForm.title.trim(), amount, currency: transactionForm.currency, kind: transactionForm.kind, category: transactionForm.category }).select().single();
+    setBusy(false);
+    if (result.error) { setFormError(result.error.message); return; }
+    setTransactions((old) => [result.data as Transaction, ...old]); setModal(null);
+    setTransactionForm({ title: '', amount: '', currency: 'IQD', kind: 'expense', category: 'General' });
+  };
+
+  const saveItem = async (event: FormEvent) => {
+    event.preventDefault(); setFormError('');
+    const quantity = Number(itemForm.quantity);
+    if (!itemForm.name.trim() || !Number.isInteger(quantity) || quantity < 0) { setFormError('Enter a name and a valid quantity.'); return; }
+    if (!supabase || !session) { setFormError('Sign in after configuring Supabase to save data.'); return; }
+    setBusy(true);
+    const result = await supabase.from('tracked_items').insert({ user_id: session.user.id, name: itemForm.name.trim(), category: itemForm.category, quantity, location: itemForm.location.trim() }).select().single();
+    setBusy(false);
+    if (result.error) { setFormError(result.error.message); return; }
+    setItems((old) => [result.data as Item, ...old]); setModal(null);
+    setItemForm({ name: '', category: 'General', quantity: '1', location: '' });
+  };
+
+  const saveNote = async (event: FormEvent) => {
+    event.preventDefault(); setFormError('');
+    if (!noteForm.title.trim()) { setFormError('Add a title for your note.'); return; }
+    if (!supabase || !session) { setFormError('Sign in after configuring Supabase to save data.'); return; }
+    setBusy(true);
+    const result = await supabase.from('notes').insert({ user_id: session.user.id, title: noteForm.title.trim(), body: noteForm.body.trim() }).select().single();
+    setBusy(false);
+    if (result.error) { setFormError(result.error.message); return; }
+    setNotes((old) => [result.data as Note, ...old]); setModal(null); setNoteForm({ title: '', body: '' });
+  };
+
+  if (!authReady) return <main className="loading-screen"><LoaderCircle className="spin" size={28} /><span>Opening your dashboard…</span></main>;
+
+  if (!session) return (
+    <main className="auth-shell">
+      <div className="auth-glow" />
+      <section className="auth-card">
+        <div className="brand-mark"><Activity size={23} /></div>
+        <div className="eyebrow"><ShieldCheck size={14} /> YOUR PRIVATE WORKSPACE</div>
+        <h1>Pannel<span>.</span></h1>
+        <p className="auth-subtitle">Your money, items, and notes. All in one place.</p>
+        <form onSubmit={signIn} className="form-stack">
+          <label>Email address<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required autoComplete="email" /></label>
+          <label>Password<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" required minLength={8} autoComplete={authMode === 'login' ? 'current-password' : 'new-password'} /></label>
+          {authMessage && <p className="form-error">{authMessage}</p>}
+          <button className="button primary full" disabled={busy}>{busy ? <LoaderCircle className="spin" size={17} /> : null}{authMode === 'login' ? 'Sign in securely' : 'Create account'}</button>
+        </form>
+        <button className="text-button" onClick={() => { setAuthMode(authMode === 'login' ? 'signup' : 'login'); setAuthMessage(''); }}>
+          {authMode === 'login' ? 'New here? Create an account' : 'Already have an account? Sign in'}
+        </button>
+        {!isSupabaseConfigured && <div className="setup-notice"><strong>Setup required</strong><span>Connect your Supabase project using the README instructions before account access is available.</span></div>}
+        <p className="auth-foot"><ShieldCheck size={13} /> Your records are designed to be isolated by account.</p>
+      </section>
+    </main>
+  );
+
+  return (
+    <div className="app-shell">
+      <aside className="sidebar">
+        <a className="brand" href="#" onClick={(e) => { e.preventDefault(); setTab('Overview'); }}><span className="brand-mark"><Activity size={21} /></span><span>Pannel<span className="brand-dot">.</span><small>PERSONAL DASHBOARD</small></span></a>
+        <div className="nav-caption">WORKSPACE</div>
+        <nav>{navItems.map(({ name, icon: Icon }) => <button key={name} className={'nav-link ' + (tab === name ? 'active' : '')} onClick={() => setTab(name)}><Icon size={18} /><span>{name}</span>{name === 'Notes' && notes.length > 0 && <span className="nav-count">{notes.length}</span>}</button>)}</nav>
+        <div className="sidebar-bottom"><div className="privacy-card"><ShieldCheck size={18} /><strong>Your space. Your data.</strong><p>Personal records, organized in one private workspace.</p><span><i /> ACCOUNT CONNECTED</span></div><div className="user-row"><div className="avatar">{session.user.email?.slice(0, 1).toUpperCase() ?? 'P'}</div><div className="user-info"><strong>{session.user.email?.split('@')[0]}</strong><span>Personal account</span></div><button className="icon-button" aria-label="Sign out" title="Sign out" onClick={() => void supabase?.auth.signOut()}><LogOut size={17} /></button></div></div>
+      </aside>
+
+      <main className="main-content">
+        <header className="topbar"><div className="breadcrumb"><span>Workspace</span><span className="crumb-slash">/</span><strong>{tab}</strong></div><div className="topbar-actions"><span className="sync-status"><i /> Cloud sync enabled</span><button className="mobile-profile" onClick={() => setTab('Settings')} aria-label="Settings"><Settings size={18} /></button><div className="avatar small">{session.user.email?.slice(0, 1).toUpperCase() ?? 'P'}</div></div></header>
+        <div className="page-content">
+          <div className="page-heading"><div><div className="eyebrow"><Sparkles size={13} /> YOUR PERSONAL SPACE</div><h1>{tab === 'Overview' ? 'Good to see you.' : tab}</h1><p>{tab === 'Overview' ? 'A clearer picture of everything that matters to you.' : tab === 'Money' ? 'Keep your IQD and USD transactions organized.' : tab === 'Items' ? 'Know what you have, and where it is.' : tab === 'Notes' ? 'Your thoughts, collected in one place.' : 'Manage your personal workspace.'}</p></div>{tab !== 'Settings' && <button className="button primary" onClick={() => { setFormError(''); setModal(tab === 'Money' ? 'transaction' : tab === 'Items' ? 'item' : tab === 'Notes' ? 'note' : 'transaction'); }}><Plus size={17} /><span>{tab === 'Money' ? 'Add transaction' : tab === 'Items' ? 'Add item' : tab === 'Notes' ? 'New note' : 'Quick add'}</span></button>}</div>
+
+          {tab === 'Overview' && <>
+            <div className="welcome-banner"><div className="welcome-orb"><Activity size={26} /></div><div><span className="banner-label">YOUR DASHBOARD</span><h2>Everything in its right place.</h2><p>Track your finances, catalog your items, and capture your ideas.</p></div><div className="banner-spark"><span /><span /><span /><span /><span /><span /><span /></div></div>
+            <div className="section-title"><h2>Financial snapshot</h2><span>Tracked transactions only</span></div>
+            <div className="stats-grid">
+              <StatCard icon={<Wallet size={18} />} label="IQD balance" value={money(totals.IQD.income - totals.IQD.expense, 'IQD')} note={`${money(totals.IQD.income, 'IQD')} income recorded`} tone="violet" />
+              <StatCard icon={<CircleDollarSign size={18} />} label="USD balance" value={money(totals.USD.income - totals.USD.expense, 'USD')} note={`${money(totals.USD.expense, 'USD')} spent recorded`} tone="blue" />
+              <StatCard icon={<Boxes size={18} />} label="Items tracked" value={String(items.length)} note={`${items.reduce((sum, item) => sum + Number(item.quantity), 0)} total units`} tone="green" />
+              <StatCard icon={<FileText size={18} />} label="Saved notes" value={String(notes.length)} note="Your ideas, in one place" tone="amber" />
+            </div>
+            <div className="content-grid"><section className="panel chart-panel"><div className="panel-heading"><div><h3>Money activity</h3><p>Sample trend · IQD</p></div><span className="chart-legend"><i /> Income <i className="legend-expense" /> Expenses</span></div><div className="chart-wrap"><ResponsiveContainer width="100%" height="100%"><AreaChart data={moneyChart} margin={{ top: 10, right: 4, left: -18, bottom: 0 }}><defs><linearGradient id="incomeFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#8b7cff" stopOpacity={0.26} /><stop offset="95%" stopColor="#8b7cff" stopOpacity={0} /></linearGradient></defs><CartesianGrid stroke="#252935" strokeDasharray="4 5" vertical={false} /><XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: '#777f91', fontSize: 11 }} dy={10} /><YAxis axisLine={false} tickLine={false} tick={{ fill: '#777f91', fontSize: 10 }} tickFormatter={(v: number) => v >= 1000 ? `${v / 1000}k` : String(v)} /><Tooltip contentStyle={{ background: '#171a23', border: '1px solid #303545', borderRadius: 12, color: '#fff', fontSize: 12 }} formatter={(value) => [money(Number(value), 'IQD')]} /><Area type="monotone" dataKey="income" name="Income" stroke="#9b8cff" strokeWidth={2.5} fill="url(#incomeFill)" /><Area type="monotone" dataKey="expense" name="Expenses" stroke="#42c8ad" strokeWidth={2} fill="transparent" /></AreaChart></ResponsiveContainer></div><p className="chart-footnote">Illustrative chart only — replace with your recorded data as transactions are added.</p></section>
+            <section className="panel recent-panel"><div className="panel-heading"><div><h3>Recent transactions</h3><p>Your latest money activity</p></div><button className="subtle-link" onClick={() => setTab('Money')}>View all</button></div>{transactions.slice(0, 4).length ? transactions.slice(0, 4).map((t) => <TransactionRow key={t.id} transaction={t} />) : <EmptyState icon={<Wallet size={20} />} title="No transactions yet" text="Your recorded income and expenses will show here." />}</section></div>
+            <div className="section-title section-title-lower"><h2>Your workspace</h2><span>Everything you track</span></div><div className="workspace-grid"><QuickCard icon={<Wallet />} title="Money tracker" desc="Income, expenses, and balances" count={`${transactions.length} transactions`} tone="violet" onClick={() => setTab('Money')} /><QuickCard icon={<Boxes />} title="Item tracker" desc="Belongings and inventory" count={`${items.length} saved items`} tone="green" onClick={() => setTab('Items')} /><QuickCard icon={<FileText />} title="Note tracker" desc="Thoughts and important details" count={`${notes.length} saved notes`} tone="amber" onClick={() => setTab('Notes')} /></div>
+          </>}
+
+          {tab === 'Money' && <><div className="stats-grid money-stats"><StatCard icon={<TrendingUp size={18} />} label="IQD balance" value={money(totals.IQD.income - totals.IQD.expense, 'IQD')} note="Income minus expenses" tone="violet" /><StatCard icon={<CircleDollarSign size={18} />} label="USD balance" value={money(totals.USD.income - totals.USD.expense, 'USD')} note="Income minus expenses" tone="blue" /><StatCard icon={<ArrowDownLeft size={18} />} label="Total IQD income" value={money(totals.IQD.income, 'IQD')} note="Recorded income" tone="green" /><StatCard icon={<ArrowUpRight size={18} />} label="Total IQD expenses" value={money(totals.IQD.expense, 'IQD')} note="Recorded expenses" tone="amber" /></div><section className="panel table-panel"><div className="panel-heading"><div><h3>Transactions</h3><p>IQD and USD are tracked separately</p></div><SearchBox value={search} onChange={setSearch} placeholder="Search transactions" /></div>{filteredTransactions.length ? <div className="table-scroll"><table><thead><tr><th>TRANSACTION</th><th>CATEGORY</th><th>TYPE</th><th>DATE</th><th className="align-right">AMOUNT</th></tr></thead><tbody>{filteredTransactions.map((t) => <tr key={t.id}><td><div className="table-name"><span className={'transaction-icon ' + t.kind}>{t.kind === 'income' ? <ArrowDownLeft size={16} /> : <ArrowUpRight size={16} />}</span><strong>{t.title}</strong></div></td><td><span className="category-pill">{t.category}</span></td><td><span className={'type-label ' + t.kind}>{t.kind}</span></td><td>{dateLabel(t.created_at)}</td><td className={'align-right amount ' + t.kind}>{t.kind === 'income' ? '+' : '−'}{money(Number(t.amount), t.currency)}</td></tr>)}</tbody></table></div> : <EmptyState icon={<Wallet size={20} />} title="No matching transactions" text="Add your first transaction to start tracking your money." action={<button className="button secondary" onClick={() => setModal('transaction')}><Plus size={16} /> Add transaction</button>} />}</section></>}
+
+          {tab === 'Items' && <section className="panel list-panel"><div className="panel-heading"><div><h3>Your items</h3><p>Track quantities, categories, and locations</p></div><SearchBox value={search} onChange={setSearch} placeholder="Search items" /></div>{filteredItems.length ? <div className="item-grid">{filteredItems.map((item) => <article className="item-card" key={item.id}><div className="item-card-icon"><Boxes size={20} /></div><span className="category-pill">{item.category}</span><h3>{item.name}</h3><p>{item.location || 'Location not specified'}</p><div className="item-card-bottom"><span>Quantity</span><strong>{item.quantity}</strong></div></article>)}</div> : <EmptyState icon={<Boxes size={20} />} title="Your inventory starts here" text="Add belongings, devices, collections, or anything you want to keep track of." action={<button className="button primary" onClick={() => setModal('item')}><Plus size={16} /> Add first item</button>} />}</section>}
+
+          {tab === 'Notes' && <section className="panel list-panel"><div className="panel-heading"><div><h3>All notes</h3><p>Search your saved thoughts and details</p></div><SearchBox value={search} onChange={setSearch} placeholder="Search notes" /></div>{filteredNotes.length ? <div className="notes-grid">{filteredNotes.map((note) => <article className="note-card" key={note.id}><div className="note-card-top"><span className="note-icon"><FileText size={17} /></span><span>{dateLabel(note.created_at)}</span></div><h3>{note.title}</h3><p>{note.body || 'No additional details.'}</p></article>)}</div> : <EmptyState icon={<FileText size={20} />} title="A place for your thoughts" text="Create notes for ideas, reminders, plans, or information you want to keep handy." action={<button className="button primary" onClick={() => setModal('note')}><Plus size={16} /> Write a note</button>} />}</section>}
+
+          {tab === 'Settings' && <div className="settings-grid"><section className="panel settings-panel"><div className="settings-icon"><ShieldCheck size={21} /></div><h3>Account & privacy</h3><p>Your account is signed in. Data access is intended to be restricted to your authenticated account using database security policies.</p><div className="settings-row"><span>Email</span><strong>{session.user.email}</strong></div><div className="settings-row"><span>Sync status</span><span className="sync-status"><i /> Connected</span></div><div className="settings-row"><span>Default currency</span><strong>IQD (USD supported)</strong></div><button className="button secondary full" onClick={() => void supabase?.auth.signOut()}><LogOut size={16} /> Sign out</button></section><section className="panel settings-panel"><div className="settings-icon blue"><Settings size={21} /></div><h3>Workspace preferences</h3><p>Pannel is optimized for mobile screens and supports larger displays.</p><div className="settings-row"><span>Appearance</span><strong>Dark Pro</strong></div><div className="settings-row"><span>Layout</span><strong>Mobile-first</strong></div><div className="settings-row"><span>Currency display</span><strong>Per-transaction currency</strong></div><div className="settings-hint">IQD and USD balances are kept separate. No automatic exchange rate is assumed.</div></section></div>}
+        </div>
+        <footer className="footer"><span>© {new Date().getFullYear()} Pannel Dashboard</span><span><ShieldCheck size={13} /> Your personal space</span></footer>
+      </main>
+      <nav className="mobile-nav">{navItems.slice(0, 4).map(({ name, icon: Icon }) => <button key={name} className={tab === name ? 'active' : ''} onClick={() => setTab(name)}><Icon size={20} /><span>{name === 'Overview' ? 'Home' : name}</span></button>)}<button className={tab === 'Settings' ? 'active' : ''} onClick={() => setTab('Settings')}><Menu size={20} /><span>More</span></button></nav>
+
+      {modal && <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) setModal(null); }}><section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div className="modal-heading"><div><span className="eyebrow">YOUR WORKSPACE</span><h2 id="modal-title">{modal === 'transaction' ? 'Add transaction' : modal === 'item' ? 'Add item' : 'Create a note'}</h2></div><button className="icon-button" onClick={() => setModal(null)} aria-label="Close"><X size={19} /></button></div>
+        <form className="form-stack" onSubmit={modal === 'transaction' ? saveTransaction : modal === 'item' ? saveItem : saveNote}>
+          {modal === 'transaction' && <><label>Transaction title<input value={transactionForm.title} onChange={(e) => setTransactionForm({ ...transactionForm, title: e.target.value })} placeholder="e.g. Monthly allowance" required maxLength={100} /></label><div className="form-row"><label>Amount<input type="number" min="0.01" step="any" value={transactionForm.amount} onChange={(e) => setTransactionForm({ ...transactionForm, amount: e.target.value })} placeholder="0.00" required /></label><label>Currency<select value={transactionForm.currency} onChange={(e) => setTransactionForm({ ...transactionForm, currency: e.target.value as Currency })}><option value="IQD">IQD — Dinar</option><option value="USD">USD — Dollar</option></select></label></div><div className="form-row"><label>Type<select value={transactionForm.kind} onChange={(e) => setTransactionForm({ ...transactionForm, kind: e.target.value as 'income' | 'expense' })}><option value="expense">Expense</option><option value="income">Income</option></select></label><label>Category<select value={transactionForm.category} onChange={(e) => setTransactionForm({ ...transactionForm, category: e.target.value })}>{['General', 'Food', 'Transport', 'Shopping', 'Bills', 'Salary', 'Savings', 'Other'].map((c) => <option key={c}>{c}</option>)}</select></label></div></>}
+          {modal === 'item' && <><label>Item name<input value={itemForm.name} onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })} placeholder="e.g. Headphones" required maxLength={120} /></label><div className="form-row"><label>Category<select value={itemForm.category} onChange={(e) => setItemForm({ ...itemForm, category: e.target.value })}>{['General', 'Electronics', 'Clothing', 'Home', 'Collectibles', 'Books', 'Other'].map((c) => <option key={c}>{c}</option>)}</select></label><label>Quantity<input type="number" min="0" step="1" value={itemForm.quantity} onChange={(e) => setItemForm({ ...itemForm, quantity: e.target.value })} required /></label></div><label>Location <span className="optional">(optional)</span><input value={itemForm.location} onChange={(e) => setItemForm({ ...itemForm, location: e.target.value })} placeholder="e.g. Desk drawer" maxLength={120} /></label></>}
+          {modal === 'note' && <><label>Note title<input value={noteForm.title} onChange={(e) => setNoteForm({ ...noteForm, title: e.target.value })} placeholder="Give your note a title" required maxLength={160} /></label><label>Details<textarea rows={6} value={noteForm.body} onChange={(e) => setNoteForm({ ...noteForm, body: e.target.value })} placeholder="Write anything you want to remember…" maxLength={12000} /></label></>}
+          {formError && <p className="form-error">{formError}</p>}<div className="modal-actions"><button type="button" className="button secondary" onClick={() => setModal(null)}>Cancel</button><button className="button primary" disabled={busy}>{busy ? <LoaderCircle size={16} className="spin" /> : <Check size={16} />} Save {modal === 'transaction' ? 'transaction' : modal === 'item' ? 'item' : 'note'}</button></div>
+        </form></section></div>}
+    </div>
+  );
+}
+
+function StatCard({ icon, label, value, note, tone }: { icon: React.ReactNode; label: string; value: string; note: string; tone: string }) {
+  return <article className="stat-card"><div className={'stat-icon ' + tone}>{icon}</div><span className="stat-label">{label}</span><strong className="stat-value">{value}</strong><span className="stat-note">{note}</span></article>;
+}
+function TransactionRow({ transaction: t }: { transaction: Transaction }) {
+  return <div className="transaction-row"><span className={'transaction-icon ' + t.kind}>{t.kind === 'income' ? <ArrowDownLeft size={17} /> : <ArrowUpRight size={17} />}</span><div className="transaction-info"><strong>{t.title}</strong><span>{t.category} · {dateLabel(t.created_at)}</span></div><strong className={'transaction-amount ' + t.kind}>{t.kind === 'income' ? '+' : '−'}{money(Number(t.amount), t.currency)}</strong></div>;
+}
+function EmptyState({ icon, title, text, action }: { icon: React.ReactNode; title: string; text: string; action?: React.ReactNode }) {
+  return <div className="empty-state"><div className="empty-icon">{icon}</div><h3>{title}</h3><p>{text}</p>{action}</div>;
+}
+function QuickCard({ icon, title, desc, count, tone, onClick }: { icon: React.ReactNode; title: string; desc: string; count: string; tone: string; onClick: () => void }) {
+  return <button className="quick-card" onClick={onClick}><span className={'quick-icon ' + tone}>{icon}</span><span className="quick-title">{title}</span><span className="quick-desc">{desc}</span><span className="quick-bottom">{count}<ChevronDown size={15} /></span></button>;
+}
+function SearchBox({ value, onChange, placeholder }: { value: string; onChange: (value: string) => void; placeholder: string }) {
+  return <label className="search-box"><Search size={15} /><input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} aria-label={placeholder} /></label>;
+}
