@@ -239,3 +239,47 @@ html[data-theme=light] .panel { box-shadow:0 8px 26px rgba(0,0,0,.035); }
 html[data-theme=light] .stat-card:hover,html[data-theme=light] .quick-card:hover,html[data-theme=light] .item-card:hover,html[data-theme=light] .note-card:hover { border-color:#a1a1aa; }
 html[data-theme=light] .form-stack input:focus,html[data-theme=light] .form-stack select:focus,html[data-theme=light] .form-stack textarea:focus,html[data-theme=light] .search-box:focus-within { box-shadow:0 0 0 3px rgba(24,24,27,.06); }
 html[data-theme=light] .chart-footnote { color:#71717a; }
+
+
+/* Final design-system pass: stronger hierarchy and predictable interactions */
+:root {
+  --radius-card: 14px;
+  --radius-control: 10px;
+  --focus-ring: #9585ff;
+}
+html { scroll-behavior: smooth; }
+::selection { background: #9585ff44; color: inherit; }
+.nav-link:focus-visible, .quick-add-premium:focus-visible, .button:focus-visible, .icon-button:focus-visible {
+  outline-color: var(--focus-ring);
+}
+.stat-card, .panel, .quick-card, .item-card, .note-card, .settings-panel {
+  border-radius: var(--radius-card);
+}
+.stat-card { padding: 19px; }
+.stat-label { letter-spacing: .01em; }
+.stat-note { max-width: 38ch; }
+.panel-heading { align-items: flex-start; }
+.transaction-row { min-width: 0; }
+.transaction-amount { font-variant-numeric: tabular-nums; }
+.search-box { min-height: 42px; }
+.search-box input { min-width: 0; }
+.quick-add-premium:focus-visible { outline-offset: 3px; }
+.nav-link:active, .mobile-nav button:active, .button:active { transform: translateY(1px); }
+@media (hover: hover) {
+  .panel:hover { border-color: color-mix(in srgb, var(--border) 65%, var(--muted)); }
+}
+@media (max-width: 760px) {
+  .page-content { padding-inline: 18px; padding-top: 24px; padding-bottom: 32px; }
+  .panel-heading { flex-wrap: wrap; }
+  .chart-legend { white-space: normal; }
+  .transaction-row { gap: 8px; }
+  .transaction-amount { font-size: 10px; }
+}
+@media (max-width: 420px) {
+  .page-content { padding-inline: 14px; }
+  .chart-panel, .recent-panel, .table-panel, .list-panel { padding: 15px; }
+  .quick-add-premium { max-width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
