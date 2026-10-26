@@ -22,7 +22,7 @@ const uiTranslations: Record<string, string> = {
   'Keep your IQD and USD transactions organized.':'مامەڵەکانی دینار و دۆلارت ڕێک بخە.', 'Know what you have, and where it is.':'بزانە چی هەتە و لە کوێیە.',
   'Your thoughts, collected in one place.':'بیر و بیرۆکەکانت لە یەک شوێندا کۆ بکەرەوە.', 'Manage your personal workspace.':'شوێنی کاری تایبەتی خۆت بەڕێوەببە.',
   'Add transaction':'زیادکردنی مامەڵە', 'Add item':'زیادکردنی کەلوپەل', 'New note':'تێبینییەکی نوێ', 'Quick add':'زیادکردنی خێرا',
-  'Everything in its right place.':'هەموو شتێک لە شوێنی خۆیدایە.', 'Track your finances, catalog your items, and capture your ideas.':'داراییەکانت بەدواداچوون بکە، کەلوپەلەکانت تۆمار بکە و بیرۆکەکانت بنووسە.',
+  'Track your finances, catalog your items, and capture your ideas.':'داراییەکانت بەدواداچوون بکە، کەلوپەلەکانت تۆمار بکە و بیرۆکەکانت بنووسە.',
   'Financial snapshot':'پوختەی دارایی', 'Tracked transactions only':'تەنها مامەڵە تۆمارکراوەکان', 'IQD balance':'باڵانسی IQD', 'USD balance':'باڵانسی USD',
   'Items tracked':'کەلوپەلە تۆمارکراوەکان', 'Saved notes':'تێبینییە پاشەکەوتکراوەکان', 'Money activity':'جووڵەی پارە', 'Recent transactions':'دوایین مامەڵەکان',
   'Your latest money activity':'دوایین چالاکییە داراییەکانت', 'View all':'بینینی هەمووی', 'No transactions yet':'هێشتا هیچ مامەڵەیەک نییە',
