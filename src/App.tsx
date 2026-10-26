@@ -108,13 +108,13 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [items, setItems] = useState<Item[]>([]);
-  const [debts, setNotes] = useState<Debt[]>([]);
+  const [debts, setDebts] = useState<Debt[]>([]);
   const [modal, setModal] = useState<'transaction' | 'item' | 'debt' | null>(null);
   const [search, setSearch] = useState('');
   const [formError, setFormError] = useState('');
   const [transactionForm, setTransactionForm] = useState({ title: '', amount: '', currency: 'IQD' as Currency, kind: 'expense' as 'income' | 'expense', category: 'General' });
   const [itemForm, setItemForm] = useState({ name: '', category: 'General', quantity: '1', location: '' });
-  const [noteForm, setNoteForm] = useState({ title: '', body: '' });
+  const [debtForm, setDebtForm] = useState({ person: '', amount: '', paid: '0', currency: 'IQD' as Currency, direction: 'i_owe' as 'owed_to_me' | 'i_owe', due_date: '', details: '' });
 
   useEffect(() => {
     if (!auth) { setAuthReady(true); return; }
@@ -122,7 +122,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!session || !db) { setTransactions([]); setItems([]); setNotes([]); return; }
+    if (!session || !db) { setTransactions([]); setItems([]); setDebts([]); return; }
     const toRecords = <T extends { id: string; created_at: string }>(snapshot: { docs: Array<{ id: string; data: () => Record<string, unknown> }> }): T[] =>
       snapshot.docs.map((document) => {
         const data = document.data();
@@ -134,8 +134,8 @@ export default function App() {
     const unsubItems = onSnapshot(query(collection(db, 'trackedItems'), where('userId', '==', session.uid)), (snapshot) => {
       setItems(toRecords<Item>(snapshot).sort((a, b) => b.created_at.localeCompare(a.created_at)));
     });
-    const unsubNotes = onSnapshot(query(collection(db, 'debts'), where('userId', '==', session.uid)), (snapshot) => {
-      setNotes(toRecords<Debt>(snapshot).sort((a, b) => b.created_at.localeCompare(a.created_at)));
+    const unsubDebts = onSnapshot(query(collection(db, 'debts'), where('userId', '==', session.uid)), (snapshot) => {
+      setDebts(toRecords<Debt>(snapshot).sort((a, b) => b.created_at.localeCompare(a.created_at)));
     });
     return () => { unsubTransactions(); unsubItems(); unsubDebts(); };
   }, [session]);
@@ -163,7 +163,7 @@ export default function App() {
     });
   }, [transactions]);
   const filteredItems = items.filter((item) => (item.name + ' ' + item.category + ' ' + item.location).toLowerCase().includes(search.toLowerCase()));
-  const filteredNotes = debts.filter((debt) => (debt.person + ' ' + debt.details + ' ' + debt.direction).toLowerCase().includes(search.toLowerCase()));
+  const filteredDebts = debts.filter((debt) => (debt.person + ' ' + debt.details + ' ' + debt.direction).toLowerCase().includes(search.toLowerCase()));
   const filteredTransactions = transactions.filter((t) => (t.title + ' ' + t.category + ' ' + t.kind).toLowerCase().includes(search.toLowerCase()));
 
   const signIn = async (event: FormEvent) => {
@@ -204,14 +204,15 @@ export default function App() {
     finally { setBusy(false); }
   };
 
-  const saveNote = async (event: FormEvent) => {
+  const saveDebt = async (event: FormEvent) => {
     event.preventDefault(); setFormError('');
-    if (!noteForm.title.trim()) { setFormError('Add a title for your debt.'); return; }
+    const amount = Number(debtForm.amount); const paid = Number(debtForm.paid);
+    if (!debtForm.person.trim() || !Number.isFinite(amount) || amount <= 0 || !Number.isFinite(paid) || paid < 0 || paid > amount) { setFormError('Enter a person, a valid amount, and a payment between zero and the debt amount.'); return; }
     if (!db || !session) { setFormError('Sign in after configuring Firebase to save data.'); return; }
     setBusy(true);
     try {
-      await addDoc(collection(db, 'debts'), { userId: session.uid, title: noteForm.title.trim(), body: noteForm.body.trim(), createdAt: Date.now() });
-      setModal(null); setNoteForm({ title: '', body: '' });
+      await addDoc(collection(db, 'debts'), { userId: session.uid, person: debtForm.person.trim(), amount, paid, currency: debtForm.currency, direction: debtForm.direction, due_date: debtForm.due_date, details: debtForm.details.trim(), createdAt: Date.now() });
+      setModal(null); setDebtForm({ person: '', amount: '', paid: '0', currency: 'IQD', direction: 'i_owe', due_date: '', details: '' });
     } catch (error) { setFormError(error instanceof Error ? error.message : 'Could not save debt.'); }
     finally { setBusy(false); }
   };
@@ -287,7 +288,7 @@ export default function App() {
       <nav className="mobile-nav">{navItems.slice(0, 4).map(({ name, icon: Icon }) => <button key={name} className={tab === name ? 'active' : ''} onClick={() => setTab(name)}><Icon size={20} /><span>{name === 'Overview' ? 'Home' : name}</span></button>)}<button className={tab === 'Settings' ? 'active' : ''} onClick={() => setTab('Settings')}><Menu size={20} /><span>More</span></button></nav>
 
       {modal && <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) setModal(null); }}><section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div className="modal-heading"><div><span className="eyebrow">YOUR WORKSPACE</span><h2 id="modal-title">{modal === 'transaction' ? 'Add transaction' : modal === 'item' ? 'Add item' : 'Add a debt'}</h2></div><button className="icon-button" onClick={() => setModal(null)} aria-label="Close"><X size={19} /></button></div>
-        <form className="form-stack" onSubmit={modal === 'transaction' ? saveTransaction : modal === 'item' ? saveItem : saveNote}>
+        <form className="form-stack" onSubmit={modal === 'transaction' ? saveTransaction : modal === 'item' ? saveItem : saveDebt}>
           {modal === 'transaction' && <><label>Transaction title<input value={transactionForm.title} onChange={(e) => setTransactionForm({ ...transactionForm, title: e.target.value })} placeholder="e.g. Monthly allowance" required maxLength={100} /></label><div className="form-row"><label>Amount<input type="number" min="0.01" step="any" value={transactionForm.amount} onChange={(e) => setTransactionForm({ ...transactionForm, amount: e.target.value })} placeholder="0.00" required /></label><label>Currency<select value={transactionForm.currency} onChange={(e) => setTransactionForm({ ...transactionForm, currency: e.target.value as Currency })}><option value="IQD">IQD — Dinar</option><option value="USD">USD — Dollar</option></select></label></div><div className="form-row"><label>Type<select value={transactionForm.kind} onChange={(e) => setTransactionForm({ ...transactionForm, kind: e.target.value as 'income' | 'expense' })}><option value="expense">Expense</option><option value="income">Income</option></select></label><label>Category<select value={transactionForm.category} onChange={(e) => setTransactionForm({ ...transactionForm, category: e.target.value })}>{['General', 'Food', 'Transport', 'Shopping', 'Bills', 'Salary', 'Savings', 'Other'].map((c) => <option key={c}>{c}</option>)}</select></label></div></>}
           {modal === 'item' && <><label>Item name<input value={itemForm.name} onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })} placeholder="e.g. Headphones" required maxLength={120} /></label><div className="form-row"><label>Category<select value={itemForm.category} onChange={(e) => setItemForm({ ...itemForm, category: e.target.value })}>{['General', 'Electronics', 'Clothing', 'Home', 'Collectibles', 'Books', 'Other'].map((c) => <option key={c}>{c}</option>)}</select></label><label>Quantity<input type="number" min="0" step="1" value={itemForm.quantity} onChange={(e) => setItemForm({ ...itemForm, quantity: e.target.value })} required /></label></div><label>Location <span className="optional">(optional)</span><input value={itemForm.location} onChange={(e) => setItemForm({ ...itemForm, location: e.target.value })} placeholder="e.g. Desk drawer" maxLength={120} /></label></>}
           {modal === 'debt' && <><label>Person / organization<input value={debtForm.person} onChange={(e) => setDebtForm({ ...debtForm, person: e.target.value })} placeholder="Who is the debt with?" required maxLength={120} /></label><div className="form-row"><label>Direction<select value={debtForm.direction} onChange={(e) => setDebtForm({ ...debtForm, direction: e.target.value as 'owed_to_me' | 'i_owe' })}><option value="owed_to_me">They owe me</option><option value="i_owe">I owe them</option></select></label><label>Currency<select value={debtForm.currency} onChange={(e) => setDebtForm({ ...debtForm, currency: e.target.value as Currency })}><option value="IQD">IQD — Dinar</option><option value="USD">USD — Dollar</option></select></label></div><div className="form-row"><label>Total amount<input type="number" min="0.01" step="any" value={debtForm.amount} onChange={(e) => setDebtForm({ ...debtForm, amount: e.target.value })} placeholder="0" required /></label><label>Already paid<input type="number" min="0" step="any" value={debtForm.paid} onChange={(e) => setDebtForm({ ...debtForm, paid: e.target.value })} placeholder="0" required /></label></div><label>Due date <span className="optional">(optional)</span><input type="date" value={debtForm.due_date} onChange={(e) => setDebtForm({ ...debtForm, due_date: e.target.value })} /></label><label>Details <span className="optional">(optional)</span><textarea rows={3} value={debtForm.details} onChange={(e) => setDebtForm({ ...debtForm, details: e.target.value })} placeholder="Any extra details…" maxLength={2000} /></label></>}
