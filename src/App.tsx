@@ -16,39 +16,39 @@ import { auth, db, isFirebaseConfigured } from './lib/firebase';
 
 type Language = 'en' | 'ckb';
 const uiTranslations: Record<string, string> = {
-  'Overview':'پوختە', 'Money':'پارە', 'Items':'کەلوپەل', 'Notes':'تێبینییەکان', 'Settings':'ڕێکخستنەکان',
+  'Overview':'پوختە', 'Money':'پارە', 'Items':'کەلوپەل', 'Debts':'قەرد', 'Settings':'ڕێکخستنەکان',
   'WORKSPACE':'بەشی کار', 'Workspace':'شوێنی کار', 'Cloud sync enabled':'هاوکاتکردنی ئۆنلاین چالاکە',
   'Good to see you.':'بەخێربێیتەوە.', 'A clearer picture of everything that matters to you.':'هەموو شتە گرنگەکانت بە ڕوونی ببینە.',
   'Keep your IQD and USD transactions organized.':'مامەڵەکانی دینار و دۆلارت ڕێک بخە.', 'Know what you have, and where it is.':'بزانە چی هەتە و لە کوێیە.',
-  'Your thoughts, collected in one place.':'بیر و بیرۆکەکانت لە یەک شوێندا کۆ بکەرەوە.', 'Manage your personal workspace.':'شوێنی کاری تایبەتی خۆت بەڕێوەببە.',
-  'Add transaction':'زیادکردنی مامەڵە', 'Add item':'زیادکردنی کەلوپەل', 'New note':'تێبینییەکی نوێ', 'Quick add':'زیادکردنی خێرا',
+  'Your debts, clearly organized.':'قەرزەکانت بە ڕوونی ڕێک بخە.', 'Manage your personal workspace.':'شوێنی کاری تایبەتی خۆت بەڕێوەببە.',
+  'Add transaction':'زیادکردنی مامەڵە', 'Add item':'زیادکردنی کەلوپەل', 'New debt':'تێبینییەکی نوێ', 'Quick add':'زیادکردنی خێرا',
   'Track your finances, catalog your items, and capture your ideas.':'داراییەکانت بەدواداچوون بکە، کەلوپەلەکانت تۆمار بکە و بیرۆکەکانت بنووسە.',
   'Financial snapshot':'پوختەی دارایی', 'Tracked transactions only':'تەنها مامەڵە تۆمارکراوەکان', 'IQD balance':'باڵانسی IQD', 'USD balance':'باڵانسی USD',
-  'Items tracked':'کەلوپەلە تۆمارکراوەکان', 'Saved notes':'تێبینییە پاشەکەوتکراوەکان', 'Money activity':'جووڵەی پارە', 'Recent transactions':'دوایین مامەڵەکان',
+  'Items tracked':'کەلوپەلە تۆمارکراوەکان', 'Saved debts':'قەردە تۆمارکراوەکان', 'Money activity':'جووڵەی پارە', 'Recent transactions':'دوایین مامەڵەکان',
   'Your latest money activity':'دوایین چالاکییە داراییەکانت', 'View all':'بینینی هەمووی', 'No transactions yet':'هێشتا هیچ مامەڵەیەک نییە',
   'Your recorded income and expenses will show here.':'داهات و خەرجییە تۆمارکراوەکانت لێرە دەردەکەون.',
   'Your workspace':'شوێنی کاری تۆ', 'Everything you track':'هەموو ئەو شتانەی بەدواداچوونیان دەکەیت',
-  'Transactions':'مامەڵەکان', 'Your items':'کەلوپەلەکانت', 'All notes':'هەموو تێبینییەکان', 'Account & privacy':'هەژمار و تایبەتمەندییەکان',
+  'Transactions':'مامەڵەکان', 'Your items':'کەلوپەلەکانت', 'All debts':'هەموو قەردەکان', 'Account & privacy':'هەژمار و تایبەتمەندییەکان',
   'Workspace preferences':'هەڵبژاردەکانی شوێنی کار', 'Email':'ئیمەیڵ', 'Sync status':'دۆخی هاوکاتکردنەوە', 'Connected':'پەیوەستە',
   'Default currency':'دراوی سەرەکی', 'Appearance':'ڕووکار', 'Layout':'ڕێکخستن', 'Currency display':'پیشاندانی دراو',
   'Sign out':'چوونەدەرەوە', 'Language':'زمان', 'English':'ئینگلیزی', 'Kurdish (Sorani)':'کوردیی سۆرانی',
-  'Personal account':'هەژماری کەسی', 'Search transactions':'گەڕان لە مامەڵەکان', 'Search items':'گەڕان لە کەلوپەلەکان', 'Search notes':'گەڕان لە تێبینییەکان',
-  'Cancel':'هەڵوەشاندنەوە', 'Save':'پاشەکەوتکردن', 'Create a note':'تێبینییەک دروست بکە',
+  'Personal account':'هەژماری کەسی', 'Search transactions':'گەڕان لە مامەڵەکان', 'Search items':'گەڕان لە کەلوپەلەکان', 'Search debts':'گەڕان لە قەردەکان',
+  'Cancel':'هەڵوەشاندنەوە', 'Save':'پاشەکەوتکردن', 'Add a debt':'تێبینییەک دروست بکە',
   'Transaction title':'ناونیشانی مامەڵە', 'Amount':'بڕ', 'Currency':'دراو', 'Type':'جۆر', 'Category':'پۆل', 'Item name':'ناوی کەلوپەل',
-  'Quantity':'ژمارە', 'Location':'شوێن', 'Note title':'ناونیشانی تێبینی', 'Details':'وردەکاری', 'optional':'ئارەزوومەندانە',
+  'Quantity':'ژمارە', 'Location':'شوێن', 'Debt title':'ناوی کەس', 'Details':'وردەکاری', 'optional':'ئارەزوومەندانە',
   'Expense':'خەرجی', 'Income':'داهات', 'No matching transactions':'هیچ مامەڵەیەکی گونجاو نەدۆزرایەوە',
-  'Your inventory starts here':'کۆگای کەلوپەلەکانت لێرە دەست پێ دەکات', 'A place for your thoughts':'شوێنێک بۆ بیرۆکەکانت',
+  'Your inventory starts here':'کۆگای کەلوپەلەکانت لێرە دەست پێ دەکات', 'A place for your debts':'شوێنێک بۆ قەردەکانت',
 };
 
-type Tab = 'Overview' | 'Money' | 'Items' | 'Notes' | 'Settings';
+type Tab = 'Overview' | 'Money' | 'Items' | 'Debts' | 'Settings';
 type Currency = 'IQD' | 'USD';
 type Transaction = { id: string; title: string; amount: number; currency: Currency; kind: 'income' | 'expense'; category: string; created_at: string };
 type Item = { id: string; name: string; category: string; quantity: number; location: string; created_at: string };
-type Note = { id: string; title: string; body: string; created_at: string };
+type Debt = { id: string; person: string; amount: number; paid: number; currency: Currency; direction: 'owed_to_me' | 'i_owe'; due_date: string; details: string; created_at: string };
 
 const navItems: { name: Tab; icon: typeof Home }[] = [
   { name: 'Overview', icon: Home }, { name: 'Money', icon: Wallet },
-  { name: 'Items', icon: Boxes }, { name: 'Notes', icon: FileText },
+  { name: 'Items', icon: Boxes }, { name: 'Debts', icon: FileText },
   { name: 'Settings', icon: Settings },
 ];
 const money = (value: number, currency: Currency) => new Intl.NumberFormat('en-US', {
@@ -108,8 +108,8 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [items, setItems] = useState<Item[]>([]);
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [modal, setModal] = useState<'transaction' | 'item' | 'note' | null>(null);
+  const [debts, setNotes] = useState<Debt[]>([]);
+  const [modal, setModal] = useState<'transaction' | 'item' | 'debt' | null>(null);
   const [search, setSearch] = useState('');
   const [formError, setFormError] = useState('');
   const [transactionForm, setTransactionForm] = useState({ title: '', amount: '', currency: 'IQD' as Currency, kind: 'expense' as 'income' | 'expense', category: 'General' });
@@ -134,10 +134,10 @@ export default function App() {
     const unsubItems = onSnapshot(query(collection(db, 'trackedItems'), where('userId', '==', session.uid)), (snapshot) => {
       setItems(toRecords<Item>(snapshot).sort((a, b) => b.created_at.localeCompare(a.created_at)));
     });
-    const unsubNotes = onSnapshot(query(collection(db, 'notes'), where('userId', '==', session.uid)), (snapshot) => {
-      setNotes(toRecords<Note>(snapshot).sort((a, b) => b.created_at.localeCompare(a.created_at)));
+    const unsubNotes = onSnapshot(query(collection(db, 'debts'), where('userId', '==', session.uid)), (snapshot) => {
+      setNotes(toRecords<Debt>(snapshot).sort((a, b) => b.created_at.localeCompare(a.created_at)));
     });
-    return () => { unsubTransactions(); unsubItems(); unsubNotes(); };
+    return () => { unsubTransactions(); unsubItems(); unsubDebts(); };
   }, [session]);
 
   const totals = useMemo(() => transactions.reduce((acc, t) => {
@@ -163,7 +163,7 @@ export default function App() {
     });
   }, [transactions]);
   const filteredItems = items.filter((item) => (item.name + ' ' + item.category + ' ' + item.location).toLowerCase().includes(search.toLowerCase()));
-  const filteredNotes = notes.filter((note) => (note.title + ' ' + note.body).toLowerCase().includes(search.toLowerCase()));
+  const filteredNotes = debts.filter((debt) => (debt.person + ' ' + debt.details + ' ' + debt.direction).toLowerCase().includes(search.toLowerCase()));
   const filteredTransactions = transactions.filter((t) => (t.title + ' ' + t.category + ' ' + t.kind).toLowerCase().includes(search.toLowerCase()));
 
   const signIn = async (event: FormEvent) => {
@@ -206,13 +206,13 @@ export default function App() {
 
   const saveNote = async (event: FormEvent) => {
     event.preventDefault(); setFormError('');
-    if (!noteForm.title.trim()) { setFormError('Add a title for your note.'); return; }
+    if (!noteForm.title.trim()) { setFormError('Add a title for your debt.'); return; }
     if (!db || !session) { setFormError('Sign in after configuring Firebase to save data.'); return; }
     setBusy(true);
     try {
-      await addDoc(collection(db, 'notes'), { userId: session.uid, title: noteForm.title.trim(), body: noteForm.body.trim(), createdAt: Date.now() });
+      await addDoc(collection(db, 'debts'), { userId: session.uid, title: noteForm.title.trim(), body: noteForm.body.trim(), createdAt: Date.now() });
       setModal(null); setNoteForm({ title: '', body: '' });
-    } catch (error) { setFormError(error instanceof Error ? error.message : 'Could not save note.'); }
+    } catch (error) { setFormError(error instanceof Error ? error.message : 'Could not save debt.'); }
     finally { setBusy(false); }
   };
 
@@ -225,7 +225,7 @@ export default function App() {
         <div className="brand-mark"><Activity size={23} /></div>
         <div className="eyebrow"><ShieldCheck size={14} /> YOUR PRIVATE WORKSPACE</div>
         <h1>Pannel<span>.</span></h1>
-        <p className="auth-subtitle">Your money, items, and notes. All in one place.</p>
+        <p className="auth-subtitle">Your money, items, and debts. All in one place.</p>
         <form onSubmit={signIn} className="form-stack">
           <label>Email address<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required autoComplete="email" /></label>
           <label>Password<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" required minLength={8} autoComplete={authMode === 'login' ? 'current-password' : 'new-password'} /></label>
@@ -245,19 +245,19 @@ export default function App() {
     <div className="app-shell">
       <aside className="sidebar">
         <a className="brand" href="#" onClick={(e) => { e.preventDefault(); setTab('Overview'); }}><span className="brand-mark"><Activity size={21} /></span><span>Pannel<span className="brand-dot">.</span></span></a>
-        <nav>{navItems.map(({ name, icon: Icon }) => <button key={name} className={'nav-link ' + (tab === name ? 'active' : '')} onClick={() => setTab(name)}><Icon size={18} /><span>{name}</span>{name === 'Notes' && notes.length > 0 && <span className="nav-count">{notes.length}</span>}</button>)}</nav>
+        <nav>{navItems.map(({ name, icon: Icon }) => <button key={name} className={'nav-link ' + (tab === name ? 'active' : '')} onClick={() => setTab(name)}><Icon size={18} /><span>{name}</span>{name === 'Debts' && debts.length > 0 && <span className="nav-count">{debts.length}</span>}</button>)}</nav>
         <div className="sidebar-bottom"><div className="privacy-card"><ShieldCheck size={18} /><strong>Your space. Your data.</strong><p>Personal records, organized in one private workspace.</p><span><i /> ACCOUNT CONNECTED</span></div><div className="user-row"><div className="avatar">{session.email?.slice(0, 1).toUpperCase() ?? 'P'}</div><div className="user-info"><strong>{session.email?.split('@')[0]}</strong><span>Personal account</span></div><button className="icon-button" aria-label="Sign out" title="Sign out" onClick={() => { if (auth) void signOut(auth); }}><LogOut size={17} /></button></div></div>
       </aside>
 
       <main className="main-content">
 
         <div className="page-content">
-          <div className="page-toolbar">{tab !== 'Settings' && <button className="quick-add-premium" onClick={() => { setFormError(''); setModal(tab === 'Money' ? 'transaction' : tab === 'Items' ? 'item' : tab === 'Notes' ? 'note' : 'transaction'); }}><span className="quick-add-icon"><Plus size={16} /></span><span>{tab === 'Money' ? 'Add transaction' : tab === 'Items' ? 'Add item' : tab === 'Notes' ? 'New note' : 'Quick add'}</span></button>}</div>
+          <div className="page-toolbar">{tab !== 'Settings' && <button className="quick-add-premium" onClick={() => { setFormError(''); setModal(tab === 'Money' ? 'transaction' : tab === 'Items' ? 'item' : tab === 'Debts' ? 'debt' : 'transaction'); }}><span className="quick-add-icon"><Plus size={16} /></span><span>{tab === 'Money' ? 'Add transaction' : tab === 'Items' ? 'Add item' : tab === 'Debts' ? 'New debt' : 'Quick add'}</span></button>}</div>
           <div className={'page-heading ' + (tab === 'Overview' ? 'overview-hero' : 'inner-page-heading')}>
             <div className="hero-copy">
               {tab === 'Overview' && <span className="hero-kicker"><i /> PERSONAL WORKSPACE</span>}
               <h1>{tab === 'Overview' ? 'Your money. Your world.' : tab}</h1>
-              <p>{tab === 'Overview' ? 'A clearer view of what you have, what you spend, and what matters.' : tab === 'Money' ? 'Every transaction, organized in one clear view.' : tab === 'Items' ? 'Keep track of the things you own.' : tab === 'Notes' ? 'Your thoughts, kept tidy and close at hand.' : 'Make your workspace work the way you do.'}</p>
+              <p>{tab === 'Overview' ? 'A clearer view of what you have, what you spend, and what matters.' : tab === 'Money' ? 'Every transaction, organized in one clear view.' : tab === 'Items' ? 'Keep track of the things you own.' : tab === 'Debts' ? 'Keep track of money owed to you and money you owe.' : 'Make your workspace work the way you do.'}</p>
             </div>
             {tab === 'Overview' && <div className="hero-orbit" aria-hidden="true"><span className="orbit-ring orbit-ring-one" /><span className="orbit-ring orbit-ring-two" /><span className="orbit-core"><Activity size={26} /></span><span className="orbit-spark orbit-spark-one" /><span className="orbit-spark orbit-spark-two" /></div>}
           </div>
@@ -265,40 +265,40 @@ export default function App() {
           {tab === 'Overview' && <>
             <div className="section-title"><h2>Financial snapshot</h2><span>Tracked transactions only</span></div>
             <div className="stats-grid">
-              <StatCard icon={<Wallet size={18} />} label="IQD balance" value={money(totals.IQD.income - totals.IQD.expense, 'IQD')} note={`${money(totals.IQD.income, 'IQD')} income recorded`} tone="violet" />
-              <StatCard icon={<CircleDollarSign size={18} />} label="USD balance" value={money(totals.USD.income - totals.USD.expense, 'USD')} note={`${money(totals.USD.expense, 'USD')} spent recorded`} tone="blue" />
-              <StatCard icon={<Boxes size={18} />} label="Items tracked" value={String(items.length)} note={`${items.reduce((sum, item) => sum + Number(item.quantity), 0)} total units`} tone="green" />
-              <StatCard icon={<FileText size={18} />} label="Saved notes" value={String(notes.length)} note="Your ideas, in one place" tone="amber" />
+              <StatCard icon={<Wallet size={18} />} label="IQD balance" value={money(totals.IQD.income - totals.IQD.expense, 'IQD')} debt={`${money(totals.IQD.income, 'IQD')} income recorded`} tone="violet" />
+              <StatCard icon={<CircleDollarSign size={18} />} label="USD balance" value={money(totals.USD.income - totals.USD.expense, 'USD')} debt={`${money(totals.USD.expense, 'USD')} spent recorded`} tone="blue" />
+              <StatCard icon={<Boxes size={18} />} label="Items tracked" value={String(items.length)} debt={`${items.reduce((sum, item) => sum + Number(item.quantity), 0)} total units`} tone="green" />
+              <StatCard icon={<FileText size={18} />} label="Saved debts" value={String(debts.length)} debt="Your ideas, in one place" tone="amber" />
             </div>
             <div className="content-grid"><section className="panel chart-panel"><div className="panel-heading"><div><h3>Money activity</h3><p>Recorded activity · IQD · Last 7 days</p></div><span className="chart-legend"><i /> Income <i className="legend-expense" /> Expenses</span></div><div className="chart-wrap"><ResponsiveContainer width="100%" height="100%"><AreaChart data={moneyChart} margin={{ top: 10, right: 4, left: -18, bottom: 0 }}><defs><linearGradient id="incomeFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#8b7cff" stopOpacity={0.26} /><stop offset="95%" stopColor="#8b7cff" stopOpacity={0} /></linearGradient></defs><CartesianGrid stroke="#252935" strokeDasharray="4 5" vertical={false} /><XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: '#777f91', fontSize: 11 }} dy={10} /><YAxis axisLine={false} tickLine={false} tick={{ fill: '#777f91', fontSize: 10 }} tickFormatter={(v: number) => v >= 1000 ? `${v / 1000}k` : String(v)} /><Tooltip contentStyle={{ background: '#171a23', border: '1px solid #303545', borderRadius: 12, color: '#fff', fontSize: 12 }} formatter={(value) => [money(Number(value), 'IQD')]} /><Area type="monotone" dataKey="income" name="Income" stroke="#9b8cff" strokeWidth={2.5} fill="url(#incomeFill)" /><Area type="monotone" dataKey="expense" name="Expenses" stroke="#42c8ad" strokeWidth={2} fill="transparent" /></AreaChart></ResponsiveContainer></div><p className="chart-footnote">{transactions.some((transaction) => transaction.currency === "IQD") ? "Based on your saved IQD transactions." : "Add an IQD transaction to start building your activity history."}</p></section>
             <section className="panel recent-panel"><div className="panel-heading"><div><h3>Recent transactions</h3><p>Your latest money activity</p></div><button className="subtle-link" onClick={() => setTab('Money')}>View all</button></div>{transactions.slice(0, 4).length ? transactions.slice(0, 4).map((t) => <TransactionRow key={t.id} transaction={t} />) : <EmptyState icon={<Wallet size={20} />} title="No transactions yet" text="Your recorded income and expenses will show here." />}</section></div>
-            <div className="section-title section-title-lower"><h2>Your workspace</h2><span>Everything you track</span></div><div className="workspace-grid"><QuickCard icon={<Wallet />} title="Money tracker" desc="Income, expenses, and balances" count={`${transactions.length} transactions`} tone="violet" onClick={() => setTab('Money')} /><QuickCard icon={<Boxes />} title="Item tracker" desc="Belongings and inventory" count={`${items.length} saved items`} tone="green" onClick={() => setTab('Items')} /><QuickCard icon={<FileText />} title="Note tracker" desc="Thoughts and important details" count={`${notes.length} saved notes`} tone="amber" onClick={() => setTab('Notes')} /></div>
+            <div className="section-title section-title-lower"><h2>Your workspace</h2><span>Everything you track</span></div><div className="workspace-grid"><QuickCard icon={<Wallet />} title="Money tracker" desc="Income, expenses, and balances" count={`${transactions.length} transactions`} tone="violet" onClick={() => setTab('Money')} /><QuickCard icon={<Boxes />} title="Item tracker" desc="Belongings and inventory" count={`${items.length} saved items`} tone="green" onClick={() => setTab('Items')} /><QuickCard icon={<FileText />} title="Debt tracker" desc="Money owed to you and money you owe" count={`${debts.length} recorded debts`} tone="amber" onClick={() => setTab('Debts')} /></div>
           </>}
 
-          {tab === 'Money' && <><div className="stats-grid money-stats"><StatCard icon={<TrendingUp size={18} />} label="IQD balance" value={money(totals.IQD.income - totals.IQD.expense, 'IQD')} note="Income minus expenses" tone="violet" /><StatCard icon={<CircleDollarSign size={18} />} label="USD balance" value={money(totals.USD.income - totals.USD.expense, 'USD')} note="Income minus expenses" tone="blue" /><StatCard icon={<ArrowDownLeft size={18} />} label="Total IQD income" value={money(totals.IQD.income, 'IQD')} note="Recorded income" tone="green" /><StatCard icon={<ArrowUpRight size={18} />} label="Total IQD expenses" value={money(totals.IQD.expense, 'IQD')} note="Recorded expenses" tone="amber" /></div><section className="panel table-panel"><div className="panel-heading"><div><h3>Transactions</h3><p>IQD and USD are tracked separately</p></div><SearchBox value={search} onChange={setSearch} placeholder="Search transactions" /></div>{filteredTransactions.length ? <div className="table-scroll"><table><thead><tr><th>TRANSACTION</th><th>CATEGORY</th><th>TYPE</th><th>DATE</th><th className="align-right">AMOUNT</th></tr></thead><tbody>{filteredTransactions.map((t) => <tr key={t.id}><td><div className="table-name"><span className={'transaction-icon ' + t.kind}>{t.kind === 'income' ? <ArrowDownLeft size={16} /> : <ArrowUpRight size={16} />}</span><strong>{t.title}</strong></div></td><td><span className="category-pill">{t.category}</span></td><td><span className={'type-label ' + t.kind}>{t.kind}</span></td><td>{dateLabel(t.created_at)}</td><td className={'align-right amount ' + t.kind}>{t.kind === 'income' ? '+' : '−'}{money(Number(t.amount), t.currency)}</td></tr>)}</tbody></table></div> : <EmptyState icon={<Wallet size={20} />} title="No matching transactions" text="Add your first transaction to start tracking your money." action={<button className="button secondary" onClick={() => setModal('transaction')}><Plus size={16} /> Add transaction</button>} />}</section></>}
+          {tab === 'Money' && <><div className="stats-grid money-stats"><StatCard icon={<TrendingUp size={18} />} label="IQD balance" value={money(totals.IQD.income - totals.IQD.expense, 'IQD')} debt="Income minus expenses" tone="violet" /><StatCard icon={<CircleDollarSign size={18} />} label="USD balance" value={money(totals.USD.income - totals.USD.expense, 'USD')} debt="Income minus expenses" tone="blue" /><StatCard icon={<ArrowDownLeft size={18} />} label="Total IQD income" value={money(totals.IQD.income, 'IQD')} debt="Recorded income" tone="green" /><StatCard icon={<ArrowUpRight size={18} />} label="Total IQD expenses" value={money(totals.IQD.expense, 'IQD')} debt="Recorded expenses" tone="amber" /></div><section className="panel table-panel"><div className="panel-heading"><div><h3>Transactions</h3><p>IQD and USD are tracked separately</p></div><SearchBox value={search} onChange={setSearch} placeholder="Search transactions" /></div>{filteredTransactions.length ? <div className="table-scroll"><table><thead><tr><th>TRANSACTION</th><th>CATEGORY</th><th>TYPE</th><th>DATE</th><th className="align-right">AMOUNT</th></tr></thead><tbody>{filteredTransactions.map((t) => <tr key={t.id}><td><div className="table-name"><span className={'transaction-icon ' + t.kind}>{t.kind === 'income' ? <ArrowDownLeft size={16} /> : <ArrowUpRight size={16} />}</span><strong>{t.title}</strong></div></td><td><span className="category-pill">{t.category}</span></td><td><span className={'type-label ' + t.kind}>{t.kind}</span></td><td>{dateLabel(t.created_at)}</td><td className={'align-right amount ' + t.kind}>{t.kind === 'income' ? '+' : '−'}{money(Number(t.amount), t.currency)}</td></tr>)}</tbody></table></div> : <EmptyState icon={<Wallet size={20} />} title="No matching transactions" text="Add your first transaction to start tracking your money." action={<button className="button secondary" onClick={() => setModal('transaction')}><Plus size={16} /> Add transaction</button>} />}</section></>}
 
           {tab === 'Items' && <section className="panel list-panel"><div className="panel-heading"><div><h3>Your items</h3><p>Track quantities, categories, and locations</p></div><SearchBox value={search} onChange={setSearch} placeholder="Search items" /></div>{filteredItems.length ? <div className="item-grid">{filteredItems.map((item) => <article className="item-card" key={item.id}><div className="item-card-icon"><Boxes size={20} /></div><span className="category-pill">{item.category}</span><h3>{item.name}</h3><p>{item.location || 'Location not specified'}</p><div className="item-card-bottom"><span>Quantity</span><strong>{item.quantity}</strong></div></article>)}</div> : <EmptyState icon={<Boxes size={20} />} title="Your inventory starts here" text="Add belongings, devices, collections, or anything you want to keep track of." action={<button className="button primary" onClick={() => setModal('item')}><Plus size={16} /> Add first item</button>} />}</section>}
 
-          {tab === 'Notes' && <section className="panel list-panel"><div className="panel-heading"><div><h3>All notes</h3><p>Search your saved thoughts and details</p></div><SearchBox value={search} onChange={setSearch} placeholder="Search notes" /></div>{filteredNotes.length ? <div className="notes-grid">{filteredNotes.map((note) => <article className="note-card" key={note.id}><div className="note-card-top"><span className="note-icon"><FileText size={17} /></span><span>{dateLabel(note.created_at)}</span></div><h3>{note.title}</h3><p>{note.body || 'No additional details.'}</p></article>)}</div> : <EmptyState icon={<FileText size={20} />} title="A place for your thoughts" text="Create notes for ideas, reminders, plans, or information you want to keep handy." action={<button className="button primary" onClick={() => setModal('note')}><Plus size={16} /> Write a note</button>} />}</section>}
+          {tab === 'Debts' && <><div className="stats-grid money-stats"><StatCard icon={<ArrowDownLeft size={18} />} label="Owed to you · IQD" value={money(debtTotal('owed_to_me', 'IQD'), 'IQD')} note="Outstanding balance" tone="green" /><StatCard icon={<ArrowUpRight size={18} />} label="You owe · IQD" value={money(debtTotal('i_owe', 'IQD'), 'IQD')} note="Outstanding balance" tone="amber" /><StatCard icon={<CircleDollarSign size={18} />} label="Owed to you · USD" value={money(debtTotal('owed_to_me', 'USD'), 'USD')} note="Outstanding balance" tone="blue" /><StatCard icon={<Wallet size={18} />} label="You owe · USD" value={money(debtTotal('i_owe', 'USD'), 'USD')} note="Outstanding balance" tone="violet" /></div><section className="panel list-panel"><div className="panel-heading"><div><h3>Debt records</h3><p>Track who owes whom, payments, and remaining balances</p></div><SearchBox value={search} onChange={setSearch} placeholder="Search debts" /></div>{filteredDebts.length ? <div className="notes-grid">{filteredDebts.map((debt) => <article className="note-card" key={debt.id}><div className="note-card-top"><span className="note-icon"><CircleDollarSign size={17} /></span><span>{dateLabel(debt.created_at)}</span></div><h3>{debt.person}</h3><p>{debt.direction === 'owed_to_me' ? 'Owes you' : 'You owe'} · {money(outstanding(debt), debt.currency)} remaining</p><p>Original: {money(Number(debt.amount), debt.currency)} · Paid: {money(Number(debt.paid), debt.currency)}</p>{debt.due_date && <p>Due date: {debt.due_date}</p>}{debt.details && <p>{debt.details}</p>}</article>)}</div> : <EmptyState icon={<CircleDollarSign size={20} />} title="Your debt tracker starts here" text="Record money someone owes you or money you owe someone, and keep an eye on what's left to pay." action={<button className="button primary" onClick={() => setModal('debt')}><Plus size={16} /> Add first debt</button>} />}</section></>}
 
           {tab === 'Settings' && <div className="settings-grid"><section className="panel settings-panel"><div className="settings-icon"><ShieldCheck size={21} /></div><h3>Account & privacy</h3><p>Your account is signed in. Firestore Security Rules must restrict each record to its authenticated owner.</p><div className="settings-row"><span>Email</span><strong>{session.email}</strong></div><div className="settings-row"><span>Sync status</span><span className="sync-status"><i /> Connected</span></div><div className="settings-row"><span>Default currency</span><strong>IQD (USD supported)</strong></div><button className="button secondary full" onClick={() => { if (auth) void signOut(auth); }}><LogOut size={16} /> Sign out</button></section><section className="panel settings-panel"><div className="settings-icon blue"><Settings size={21} /></div><h3>Workspace preferences</h3><p>Pannel is optimized for mobile screens and supports larger displays.</p><div className="settings-row"><span>Language / زمان</span><select aria-label="Language" value={language} onChange={(e) => setLanguage(e.target.value as Language)}><option value="en">English</option><option value="ckb">کوردی (سۆرانی)</option></select></div><div className="settings-row"><span>Appearance</span><button className="button secondary theme-setting" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>{theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}{theme === 'dark' ? 'Light mode' : 'Dark mode'}</button></div><div className="settings-row"><span>Layout</span><strong>Mobile-first</strong></div><div className="settings-row"><span>Currency display</span><strong>Per-transaction currency</strong></div><div className="settings-hint">IQD and USD balances are kept separate. No automatic exchange rate is assumed.</div></section></div>}
         </div>
       </main>
       <nav className="mobile-nav">{navItems.slice(0, 4).map(({ name, icon: Icon }) => <button key={name} className={tab === name ? 'active' : ''} onClick={() => setTab(name)}><Icon size={20} /><span>{name === 'Overview' ? 'Home' : name}</span></button>)}<button className={tab === 'Settings' ? 'active' : ''} onClick={() => setTab('Settings')}><Menu size={20} /><span>More</span></button></nav>
 
-      {modal && <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) setModal(null); }}><section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div className="modal-heading"><div><span className="eyebrow">YOUR WORKSPACE</span><h2 id="modal-title">{modal === 'transaction' ? 'Add transaction' : modal === 'item' ? 'Add item' : 'Create a note'}</h2></div><button className="icon-button" onClick={() => setModal(null)} aria-label="Close"><X size={19} /></button></div>
+      {modal && <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) setModal(null); }}><section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div className="modal-heading"><div><span className="eyebrow">YOUR WORKSPACE</span><h2 id="modal-title">{modal === 'transaction' ? 'Add transaction' : modal === 'item' ? 'Add item' : 'Add a debt'}</h2></div><button className="icon-button" onClick={() => setModal(null)} aria-label="Close"><X size={19} /></button></div>
         <form className="form-stack" onSubmit={modal === 'transaction' ? saveTransaction : modal === 'item' ? saveItem : saveNote}>
           {modal === 'transaction' && <><label>Transaction title<input value={transactionForm.title} onChange={(e) => setTransactionForm({ ...transactionForm, title: e.target.value })} placeholder="e.g. Monthly allowance" required maxLength={100} /></label><div className="form-row"><label>Amount<input type="number" min="0.01" step="any" value={transactionForm.amount} onChange={(e) => setTransactionForm({ ...transactionForm, amount: e.target.value })} placeholder="0.00" required /></label><label>Currency<select value={transactionForm.currency} onChange={(e) => setTransactionForm({ ...transactionForm, currency: e.target.value as Currency })}><option value="IQD">IQD — Dinar</option><option value="USD">USD — Dollar</option></select></label></div><div className="form-row"><label>Type<select value={transactionForm.kind} onChange={(e) => setTransactionForm({ ...transactionForm, kind: e.target.value as 'income' | 'expense' })}><option value="expense">Expense</option><option value="income">Income</option></select></label><label>Category<select value={transactionForm.category} onChange={(e) => setTransactionForm({ ...transactionForm, category: e.target.value })}>{['General', 'Food', 'Transport', 'Shopping', 'Bills', 'Salary', 'Savings', 'Other'].map((c) => <option key={c}>{c}</option>)}</select></label></div></>}
           {modal === 'item' && <><label>Item name<input value={itemForm.name} onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })} placeholder="e.g. Headphones" required maxLength={120} /></label><div className="form-row"><label>Category<select value={itemForm.category} onChange={(e) => setItemForm({ ...itemForm, category: e.target.value })}>{['General', 'Electronics', 'Clothing', 'Home', 'Collectibles', 'Books', 'Other'].map((c) => <option key={c}>{c}</option>)}</select></label><label>Quantity<input type="number" min="0" step="1" value={itemForm.quantity} onChange={(e) => setItemForm({ ...itemForm, quantity: e.target.value })} required /></label></div><label>Location <span className="optional">(optional)</span><input value={itemForm.location} onChange={(e) => setItemForm({ ...itemForm, location: e.target.value })} placeholder="e.g. Desk drawer" maxLength={120} /></label></>}
-          {modal === 'note' && <><label>Note title<input value={noteForm.title} onChange={(e) => setNoteForm({ ...noteForm, title: e.target.value })} placeholder="Give your note a title" required maxLength={160} /></label><label>Details<textarea rows={6} value={noteForm.body} onChange={(e) => setNoteForm({ ...noteForm, body: e.target.value })} placeholder="Write anything you want to remember…" maxLength={12000} /></label></>}
-          {formError && <p className="form-error">{formError}</p>}<div className="modal-actions"><button type="button" className="button secondary" onClick={() => setModal(null)}>Cancel</button><button className="button primary" disabled={busy}>{busy ? <LoaderCircle size={16} className="spin" /> : <Check size={16} />} Save {modal === 'transaction' ? 'transaction' : modal === 'item' ? 'item' : 'note'}</button></div>
+          {modal === 'debt' && <><label>Person / organization<input value={debtForm.person} onChange={(e) => setDebtForm({ ...debtForm, person: e.target.value })} placeholder="Who is the debt with?" required maxLength={120} /></label><div className="form-row"><label>Direction<select value={debtForm.direction} onChange={(e) => setDebtForm({ ...debtForm, direction: e.target.value as 'owed_to_me' | 'i_owe' })}><option value="owed_to_me">They owe me</option><option value="i_owe">I owe them</option></select></label><label>Currency<select value={debtForm.currency} onChange={(e) => setDebtForm({ ...debtForm, currency: e.target.value as Currency })}><option value="IQD">IQD — Dinar</option><option value="USD">USD — Dollar</option></select></label></div><div className="form-row"><label>Total amount<input type="number" min="0.01" step="any" value={debtForm.amount} onChange={(e) => setDebtForm({ ...debtForm, amount: e.target.value })} placeholder="0" required /></label><label>Already paid<input type="number" min="0" step="any" value={debtForm.paid} onChange={(e) => setDebtForm({ ...debtForm, paid: e.target.value })} placeholder="0" required /></label></div><label>Due date <span className="optional">(optional)</span><input type="date" value={debtForm.due_date} onChange={(e) => setDebtForm({ ...debtForm, due_date: e.target.value })} /></label><label>Details <span className="optional">(optional)</span><textarea rows={3} value={debtForm.details} onChange={(e) => setDebtForm({ ...debtForm, details: e.target.value })} placeholder="Any extra details…" maxLength={2000} /></label></>}
+          {formError && <p className="form-error">{formError}</p>}<div className="modal-actions"><button type="button" className="button secondary" onClick={() => setModal(null)}>Cancel</button><button className="button primary" disabled={busy}>{busy ? <LoaderCircle size={16} className="spin" /> : <Check size={16} />} Save {modal === 'transaction' ? 'transaction' : modal === 'item' ? 'item' : 'debt'}</button></div>
         </form></section></div>}
     </div>
   );
 }
 
-function StatCard({ icon, label, value, note, tone }: { icon: React.ReactNode; label: string; value: string; note: string; tone: string }) {
-  return <article className="stat-card"><div className={'stat-icon ' + tone}>{icon}</div><span className="stat-label">{label}</span><strong className="stat-value">{value}</strong><span className="stat-note">{note}</span></article>;
+function StatCard({ icon, label, value, debt, tone }: { icon: React.ReactNode; label: string; value: string; debt: string; tone: string }) {
+  return <article className="stat-card"><div className={'stat-icon ' + tone}>{icon}</div><span className="stat-label">{label}</span><strong className="stat-value">{value}</strong><span className="stat-debt">{debt}</span></article>;
 }
 function TransactionRow({ transaction: t }: { transaction: Transaction }) {
   return <div className="transaction-row"><span className={'transaction-icon ' + t.kind}>{t.kind === 'income' ? <ArrowDownLeft size={17} /> : <ArrowUpRight size={17} />}</span><div className="transaction-info"><strong>{t.title}</strong><span>{t.category} · {dateLabel(t.created_at)}</span></div><strong className={'transaction-amount ' + t.kind}>{t.kind === 'income' ? '+' : '−'}{money(Number(t.amount), t.currency)}</strong></div>;
