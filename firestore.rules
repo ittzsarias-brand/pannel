@@ -25,7 +25,7 @@ service cloud.firestore {
       allow update: if ownsExistingRecord() && ownsNewRecord();
     }
 
-    match /notes/{documentId} {
+    match /debts/{documentId} {
       allow create: if ownsNewRecord();
       allow read, delete: if ownsExistingRecord();
       allow update: if ownsExistingRecord() && ownsNewRecord();
