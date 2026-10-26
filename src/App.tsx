@@ -6,7 +6,7 @@ import { addDoc, collection, onSnapshot, query, where } from 'firebase/firestore
 import {
   Activity, ArrowDownLeft, ArrowUpRight, Boxes, Check, ChevronDown, CircleDollarSign,
   FileText, Home, LogOut, Menu, Plus, Search, Settings, ShieldCheck, Sparkles,
-  TrendingUp, Wallet, X, LoaderCircle,
+  TrendingUp, Wallet, X, LoaderCircle, Sun, Moon,
 } from 'lucide-react';
 import {
   Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
@@ -65,6 +65,14 @@ const dateLabel = (value: string) => new Date(value).toLocaleDateString(undefine
 
 export default function App() {
   const [tab, setTab] = useState<Tab>('Overview');
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    try { return localStorage.getItem('pannel-theme') === 'light' ? 'light' : 'dark'; } catch { return 'dark'; }
+  });
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    try { localStorage.setItem('pannel-theme', theme); } catch { /* storage may be unavailable */ }
+  }, [theme]);
   const [language, setLanguage] = useState<Language>(() => {
     try { return localStorage.getItem('pannel-language') === 'ckb' ? 'ckb' : 'en'; } catch { return 'en'; }
   });
@@ -232,7 +240,7 @@ export default function App() {
       </aside>
 
       <main className="main-content">
-        <header className="topbar"><div className="breadcrumb"><span>Workspace</span><span className="crumb-slash">/</span><strong>{tab}</strong></div><div className="topbar-actions"><span className="sync-status"><i /> Cloud sync enabled</span><button className="mobile-profile" onClick={() => setTab('Settings')} aria-label="Settings"><Settings size={18} /></button><div className="avatar small">{session.email?.slice(0, 1).toUpperCase() ?? 'P'}</div></div></header>
+        <header className="topbar"><div className="breadcrumb"><span>Workspace</span><span className="crumb-slash">/</span><strong>{tab}</strong></div><div className="topbar-actions"><span className="sync-status"><i /> Cloud sync enabled</span><button className="icon-button theme-toggle" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>{theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}</button><button className="mobile-profile" onClick={() => setTab('Settings')} aria-label="Settings"><Settings size={18} /></button><div className="avatar small">{session.email?.slice(0, 1).toUpperCase() ?? 'P'}</div></div></header>
         <div className="page-content">
           <div className="page-heading"><div><div className="eyebrow"><Sparkles size={13} /> YOUR PERSONAL SPACE</div><h1>{tab === 'Overview' ? 'Good to see you.' : tab}</h1><p>{tab === 'Overview' ? 'A clearer picture of everything that matters to you.' : tab === 'Money' ? 'Keep your IQD and USD transactions organized.' : tab === 'Items' ? 'Know what you have, and where it is.' : tab === 'Notes' ? 'Your thoughts, collected in one place.' : 'Manage your personal workspace.'}</p></div>{tab !== 'Settings' && <button className="button primary" onClick={() => { setFormError(''); setModal(tab === 'Money' ? 'transaction' : tab === 'Items' ? 'item' : tab === 'Notes' ? 'note' : 'transaction'); }}><Plus size={17} /><span>{tab === 'Money' ? 'Add transaction' : tab === 'Items' ? 'Add item' : tab === 'Notes' ? 'New note' : 'Quick add'}</span></button>}</div>
 
@@ -256,7 +264,7 @@ export default function App() {
 
           {tab === 'Notes' && <section className="panel list-panel"><div className="panel-heading"><div><h3>All notes</h3><p>Search your saved thoughts and details</p></div><SearchBox value={search} onChange={setSearch} placeholder="Search notes" /></div>{filteredNotes.length ? <div className="notes-grid">{filteredNotes.map((note) => <article className="note-card" key={note.id}><div className="note-card-top"><span className="note-icon"><FileText size={17} /></span><span>{dateLabel(note.created_at)}</span></div><h3>{note.title}</h3><p>{note.body || 'No additional details.'}</p></article>)}</div> : <EmptyState icon={<FileText size={20} />} title="A place for your thoughts" text="Create notes for ideas, reminders, plans, or information you want to keep handy." action={<button className="button primary" onClick={() => setModal('note')}><Plus size={16} /> Write a note</button>} />}</section>}
 
-          {tab === 'Settings' && <div className="settings-grid"><section className="panel settings-panel"><div className="settings-icon"><ShieldCheck size={21} /></div><h3>Account & privacy</h3><p>Your account is signed in. Firestore Security Rules must restrict each record to its authenticated owner.</p><div className="settings-row"><span>Email</span><strong>{session.email}</strong></div><div className="settings-row"><span>Sync status</span><span className="sync-status"><i /> Connected</span></div><div className="settings-row"><span>Default currency</span><strong>IQD (USD supported)</strong></div><button className="button secondary full" onClick={() => { if (auth) void signOut(auth); }}><LogOut size={16} /> Sign out</button></section><section className="panel settings-panel"><div className="settings-icon blue"><Settings size={21} /></div><h3>Workspace preferences</h3><p>Pannel is optimized for mobile screens and supports larger displays.</p><div className="settings-row"><span>Language / زمان</span><select aria-label="Language" value={language} onChange={(e) => setLanguage(e.target.value as Language)}><option value="en">English</option><option value="ckb">کوردی (سۆرانی)</option></select></div><div className="settings-row"><span>Appearance</span><strong>Dark Pro</strong></div><div className="settings-row"><span>Layout</span><strong>Mobile-first</strong></div><div className="settings-row"><span>Currency display</span><strong>Per-transaction currency</strong></div><div className="settings-hint">IQD and USD balances are kept separate. No automatic exchange rate is assumed.</div></section></div>}
+          {tab === 'Settings' && <div className="settings-grid"><section className="panel settings-panel"><div className="settings-icon"><ShieldCheck size={21} /></div><h3>Account & privacy</h3><p>Your account is signed in. Firestore Security Rules must restrict each record to its authenticated owner.</p><div className="settings-row"><span>Email</span><strong>{session.email}</strong></div><div className="settings-row"><span>Sync status</span><span className="sync-status"><i /> Connected</span></div><div className="settings-row"><span>Default currency</span><strong>IQD (USD supported)</strong></div><button className="button secondary full" onClick={() => { if (auth) void signOut(auth); }}><LogOut size={16} /> Sign out</button></section><section className="panel settings-panel"><div className="settings-icon blue"><Settings size={21} /></div><h3>Workspace preferences</h3><p>Pannel is optimized for mobile screens and supports larger displays.</p><div className="settings-row"><span>Language / زمان</span><select aria-label="Language" value={language} onChange={(e) => setLanguage(e.target.value as Language)}><option value="en">English</option><option value="ckb">کوردی (سۆرانی)</option></select></div><div className="settings-row"><span>Appearance</span><button className="button secondary theme-setting" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>{theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}{theme === 'dark' ? 'Light mode' : 'Dark mode'}</button></div><div className="settings-row"><span>Layout</span><strong>Mobile-first</strong></div><div className="settings-row"><span>Currency display</span><strong>Per-transaction currency</strong></div><div className="settings-hint">IQD and USD balances are kept separate. No automatic exchange rate is assumed.</div></section></div>}
         </div>
         <footer className="footer"><span>© {new Date().getFullYear()} Pannel Dashboard</span><span><ShieldCheck size={13} /> Your personal space</span></footer>
       </main>
