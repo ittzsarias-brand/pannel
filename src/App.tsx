@@ -145,12 +145,16 @@ export default function App() {
     return acc;
   }, { IQD: { income: 0, expense: 0 }, USD: { income: 0, expense: 0 } }), [transactions]);
   const moneyChart = useMemo(() => {
+    const dateKey = (date: Date) => [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
     const today = new Date();
     return Array.from({ length: 7 }, (_, index) => {
       const date = new Date(today);
       date.setDate(today.getDate() - (6 - index));
-      const key = date.toLocaleDateString('en-CA');
-      const dayTransactions = transactions.filter((transaction) => transaction.currency === 'IQD' && new Date(transaction.created_at).toLocaleDateString('en-CA') === key);
+      const key = dateKey(date);
+      const dayTransactions = transactions.filter((transaction) => {
+        const createdAt = new Date(transaction.created_at);
+        return transaction.currency === 'IQD' && !Number.isNaN(createdAt.getTime()) && dateKey(createdAt) === key;
+      });
       return {
         day: date.toLocaleDateString(undefined, { weekday: 'short' }),
         income: dayTransactions.filter((transaction) => transaction.kind === 'income').reduce((sum, transaction) => sum + Number(transaction.amount), 0),
