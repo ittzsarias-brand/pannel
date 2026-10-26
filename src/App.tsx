@@ -300,8 +300,8 @@ export default function App() {
   );
 }
 
-function StatCard({ icon, label, value, debt, tone }: { icon: React.ReactNode; label: string; value: string; debt: string; tone: string }) {
-  return <article className="stat-card"><div className={'stat-icon ' + tone}>{icon}</div><span className="stat-label">{label}</span><strong className="stat-value">{value}</strong><span className="stat-debt">{debt}</span></article>;
+function StatCard({ icon, label, value, debt, note, tone }: { icon: React.ReactNode; label: string; value: string; debt?: string; note?: string; tone: string }) {
+  return <article className="stat-card"><div className={'stat-icon ' + tone}>{icon}</div><span className="stat-label">{label}</span><strong className="stat-value">{value}</strong><span className="stat-debt">{debt ?? note ?? ''}</span></article>;
 }
 function TransactionRow({ transaction: t }: { transaction: Transaction }) {
   return <div className="transaction-row"><span className={'transaction-icon ' + t.kind}>{t.kind === 'income' ? <ArrowDownLeft size={17} /> : <ArrowUpRight size={17} />}</span><div className="transaction-info"><strong>{t.title}</strong><span>{t.category} · {dateLabel(t.created_at)}</span></div><strong className={'transaction-amount ' + t.kind}>{t.kind === 'income' ? '+' : '−'}{money(Number(t.amount), t.currency)}</strong></div>;
