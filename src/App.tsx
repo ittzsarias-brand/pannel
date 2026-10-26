@@ -51,12 +51,6 @@ const navItems: { name: Tab; icon: typeof Home }[] = [
   { name: 'Items', icon: Boxes }, { name: 'Notes', icon: FileText },
   { name: 'Settings', icon: Settings },
 ];
-const moneyChart = [
-  { day: 'Mon', income: 180000, expense: 90000 }, { day: 'Tue', income: 250000, expense: 120000 },
-  { day: 'Wed', income: 160000, expense: 85000 }, { day: 'Thu', income: 310000, expense: 145000 },
-  { day: 'Fri', income: 220000, expense: 110000 }, { day: 'Sat', income: 360000, expense: 175000 },
-  { day: 'Sun', income: 290000, expense: 125000 },
-];
 const money = (value: number, currency: Currency) => new Intl.NumberFormat('en-US', {
   style: 'currency', currency, maximumFractionDigits: currency === 'IQD' ? 0 : 2,
 }).format(value);
@@ -150,6 +144,20 @@ export default function App() {
     acc[t.currency][t.kind] += Number(t.amount);
     return acc;
   }, { IQD: { income: 0, expense: 0 }, USD: { income: 0, expense: 0 } }), [transactions]);
+  const moneyChart = useMemo(() => {
+    const today = new Date();
+    return Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(today);
+      date.setDate(today.getDate() - (6 - index));
+      const key = date.toLocaleDateString('en-CA');
+      const dayTransactions = transactions.filter((transaction) => transaction.currency === 'IQD' && new Date(transaction.created_at).toLocaleDateString('en-CA') === key);
+      return {
+        day: date.toLocaleDateString(undefined, { weekday: 'short' }),
+        income: dayTransactions.filter((transaction) => transaction.kind === 'income').reduce((sum, transaction) => sum + Number(transaction.amount), 0),
+        expense: dayTransactions.filter((transaction) => transaction.kind === 'expense').reduce((sum, transaction) => sum + Number(transaction.amount), 0),
+      };
+    });
+  }, [transactions]);
   const filteredItems = items.filter((item) => (item.name + ' ' + item.category + ' ' + item.location).toLowerCase().includes(search.toLowerCase()));
   const filteredNotes = notes.filter((note) => (note.title + ' ' + note.body).toLowerCase().includes(search.toLowerCase()));
   const filteredTransactions = transactions.filter((t) => (t.title + ' ' + t.category + ' ' + t.kind).toLowerCase().includes(search.toLowerCase()));
@@ -251,7 +259,7 @@ export default function App() {
               <StatCard icon={<Boxes size={18} />} label="Items tracked" value={String(items.length)} note={`${items.reduce((sum, item) => sum + Number(item.quantity), 0)} total units`} tone="green" />
               <StatCard icon={<FileText size={18} />} label="Saved notes" value={String(notes.length)} note="Your ideas, in one place" tone="amber" />
             </div>
-            <div className="content-grid"><section className="panel chart-panel"><div className="panel-heading"><div><h3>Money activity</h3><p>Sample trend · IQD</p></div><span className="chart-legend"><i /> Income <i className="legend-expense" /> Expenses</span></div><div className="chart-wrap"><ResponsiveContainer width="100%" height="100%"><AreaChart data={moneyChart} margin={{ top: 10, right: 4, left: -18, bottom: 0 }}><defs><linearGradient id="incomeFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#8b7cff" stopOpacity={0.26} /><stop offset="95%" stopColor="#8b7cff" stopOpacity={0} /></linearGradient></defs><CartesianGrid stroke="#252935" strokeDasharray="4 5" vertical={false} /><XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: '#777f91', fontSize: 11 }} dy={10} /><YAxis axisLine={false} tickLine={false} tick={{ fill: '#777f91', fontSize: 10 }} tickFormatter={(v: number) => v >= 1000 ? `${v / 1000}k` : String(v)} /><Tooltip contentStyle={{ background: '#171a23', border: '1px solid #303545', borderRadius: 12, color: '#fff', fontSize: 12 }} formatter={(value) => [money(Number(value), 'IQD')]} /><Area type="monotone" dataKey="income" name="Income" stroke="#9b8cff" strokeWidth={2.5} fill="url(#incomeFill)" /><Area type="monotone" dataKey="expense" name="Expenses" stroke="#42c8ad" strokeWidth={2} fill="transparent" /></AreaChart></ResponsiveContainer></div><p className="chart-footnote">Illustrative chart only — replace with your recorded data as transactions are added.</p></section>
+            <div className="content-grid"><section className="panel chart-panel"><div className="panel-heading"><div><h3>Money activity</h3><p>Recorded activity · IQD · Last 7 days</p></div><span className="chart-legend"><i /> Income <i className="legend-expense" /> Expenses</span></div><div className="chart-wrap"><ResponsiveContainer width="100%" height="100%"><AreaChart data={moneyChart} margin={{ top: 10, right: 4, left: -18, bottom: 0 }}><defs><linearGradient id="incomeFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#8b7cff" stopOpacity={0.26} /><stop offset="95%" stopColor="#8b7cff" stopOpacity={0} /></linearGradient></defs><CartesianGrid stroke="#252935" strokeDasharray="4 5" vertical={false} /><XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: '#777f91', fontSize: 11 }} dy={10} /><YAxis axisLine={false} tickLine={false} tick={{ fill: '#777f91', fontSize: 10 }} tickFormatter={(v: number) => v >= 1000 ? `${v / 1000}k` : String(v)} /><Tooltip contentStyle={{ background: '#171a23', border: '1px solid #303545', borderRadius: 12, color: '#fff', fontSize: 12 }} formatter={(value) => [money(Number(value), 'IQD')]} /><Area type="monotone" dataKey="income" name="Income" stroke="#9b8cff" strokeWidth={2.5} fill="url(#incomeFill)" /><Area type="monotone" dataKey="expense" name="Expenses" stroke="#42c8ad" strokeWidth={2} fill="transparent" /></AreaChart></ResponsiveContainer></div><p className="chart-footnote">{transactions.some((transaction) => transaction.currency === "IQD") ? "Based on your saved IQD transactions." : "Add an IQD transaction to start building your activity history."}</p></section>
             <section className="panel recent-panel"><div className="panel-heading"><div><h3>Recent transactions</h3><p>Your latest money activity</p></div><button className="subtle-link" onClick={() => setTab('Money')}>View all</button></div>{transactions.slice(0, 4).length ? transactions.slice(0, 4).map((t) => <TransactionRow key={t.id} transaction={t} />) : <EmptyState icon={<Wallet size={20} />} title="No transactions yet" text="Your recorded income and expenses will show here." />}</section></div>
             <div className="section-title section-title-lower"><h2>Your workspace</h2><span>Everything you track</span></div><div className="workspace-grid"><QuickCard icon={<Wallet />} title="Money tracker" desc="Income, expenses, and balances" count={`${transactions.length} transactions`} tone="violet" onClick={() => setTab('Money')} /><QuickCard icon={<Boxes />} title="Item tracker" desc="Belongings and inventory" count={`${items.length} saved items`} tone="green" onClick={() => setTab('Items')} /><QuickCard icon={<FileText />} title="Note tracker" desc="Thoughts and important details" count={`${notes.length} saved notes`} tone="amber" onClick={() => setTab('Notes')} /></div>
           </>}
