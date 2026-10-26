@@ -5,7 +5,7 @@ import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndP
 import { addDoc, collection, onSnapshot, query, where } from 'firebase/firestore';
 import {
   Activity, ArrowDownLeft, ArrowUpRight, Boxes, Check, ChevronDown, CircleDollarSign,
-  FileText, Home, LogOut, Menu, Plus, Search, Settings, ShieldCheck, Sparkles,
+  FileText, Home, LogOut, Menu, Plus, Search, Settings, ShieldCheck,
   TrendingUp, Wallet, X, LoaderCircle, Sun, Moon,
 } from 'lucide-react';
 import {
