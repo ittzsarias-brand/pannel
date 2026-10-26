@@ -253,7 +253,14 @@ export default function App() {
 
         <div className="page-content">
           <div className="page-toolbar">{tab !== 'Settings' && <button className="quick-add-premium" onClick={() => { setFormError(''); setModal(tab === 'Money' ? 'transaction' : tab === 'Items' ? 'item' : tab === 'Notes' ? 'note' : 'transaction'); }}><span className="quick-add-icon"><Plus size={16} /></span><span>{tab === 'Money' ? 'Add transaction' : tab === 'Items' ? 'Add item' : tab === 'Notes' ? 'New note' : 'Quick add'}</span></button>}</div>
-          <div className="page-heading"><h1>{tab === 'Overview' ? 'Overview' : tab}</h1></div>
+          <div className={'page-heading ' + (tab === 'Overview' ? 'overview-hero' : 'inner-page-heading')}>
+            <div className="hero-copy">
+              {tab === 'Overview' && <span className="hero-kicker"><i /> PERSONAL WORKSPACE</span>}
+              <h1>{tab === 'Overview' ? 'Your money. Your world.' : tab}</h1>
+              <p>{tab === 'Overview' ? 'A clearer view of what you have, what you spend, and what matters.' : tab === 'Money' ? 'Every transaction, organized in one clear view.' : tab === 'Items' ? 'Keep track of the things you own.' : tab === 'Notes' ? 'Your thoughts, kept tidy and close at hand.' : 'Make your workspace work the way you do.'}</p>
+            </div>
+            {tab === 'Overview' && <div className="hero-orbit" aria-hidden="true"><span className="orbit-ring orbit-ring-one" /><span className="orbit-ring orbit-ring-two" /><span className="orbit-core"><Activity size={26} /></span><span className="orbit-spark orbit-spark-one" /><span className="orbit-spark orbit-spark-two" /></div>}
+          </div>
 
           {tab === 'Overview' && <>
             <div className="section-title"><h2>Financial snapshot</h2><span>Tracked transactions only</span></div>
