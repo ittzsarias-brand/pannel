@@ -164,6 +164,8 @@ export default function App() {
   }, [transactions]);
   const filteredItems = items.filter((item) => (item.name + ' ' + item.category + ' ' + item.location).toLowerCase().includes(search.toLowerCase()));
   const filteredDebts = debts.filter((debt) => (debt.person + ' ' + debt.details + ' ' + debt.direction).toLowerCase().includes(search.toLowerCase()));
+  const outstanding = (debt: Debt) => Math.max(0, Number(debt.amount) - Number(debt.paid));
+  const debtTotal = (direction: Debt['direction'], currency: Currency) => debts.filter((debt) => debt.direction === direction && debt.currency === currency).reduce((sum, debt) => sum + outstanding(debt), 0);
   const filteredTransactions = transactions.filter((t) => (t.title + ' ' + t.category + ' ' + t.kind).toLowerCase().includes(search.toLowerCase()));
 
   const signIn = async (event: FormEvent) => {
