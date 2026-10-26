@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
-import type { Session } from '@supabase/supabase-js';
+import type { User } from 'firebase/auth';
+import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { addDoc, collection, onSnapshot, query, where } from 'firebase/firestore';
 import {
   Activity, ArrowDownLeft, ArrowUpRight, Boxes, Check, ChevronDown, CircleDollarSign,
   FileText, Home, LogOut, Menu, Plus, Search, Settings, ShieldCheck, Sparkles,
@@ -9,7 +11,7 @@ import {
 import {
   Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
-import { isSupabaseConfigured, supabase } from './lib/supabase';
+import { auth, db, isFirebaseConfigured } from './lib/firebase';
 
 type Tab = 'Overview' | 'Money' | 'Items' | 'Notes' | 'Settings';
 type Currency = 'IQD' | 'USD';
@@ -35,7 +37,7 @@ const dateLabel = (value: string) => new Date(value).toLocaleDateString(undefine
 
 export default function App() {
   const [tab, setTab] = useState<Tab>('Overview');
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
@@ -53,28 +55,27 @@ export default function App() {
   const [noteForm, setNoteForm] = useState({ title: '', body: '' });
 
   useEffect(() => {
-    if (!supabase) { setAuthReady(true); return; }
-    supabase.auth.getSession().then(({ data }) => { setSession(data.session); setAuthReady(true); });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, next) => setSession(next));
-    return () => listener.subscription.unsubscribe();
+    if (!auth) { setAuthReady(true); return; }
+    return onAuthStateChanged(auth, (user) => { setSession(user); setAuthReady(true); });
   }, []);
 
   useEffect(() => {
-    if (!session || !supabase) { setTransactions([]); setItems([]); setNotes([]); return; }
-    let alive = true;
-    const load = async () => {
-      const [t, i, n] = await Promise.all([
-        supabase!.from('transactions').select('*').order('created_at', { ascending: false }),
-        supabase!.from('tracked_items').select('*').order('created_at', { ascending: false }),
-        supabase!.from('notes').select('*').order('created_at', { ascending: false }),
-      ]);
-      if (!alive) return;
-      if (!t.error) setTransactions(t.data as Transaction[]);
-      if (!i.error) setItems(i.data as Item[]);
-      if (!n.error) setNotes(n.data as Note[]);
-    };
-    void load();
-    return () => { alive = false; };
+    if (!session || !db) { setTransactions([]); setItems([]); setNotes([]); return; }
+    const toRecords = <T extends { id: string; created_at: string }>(snapshot: { docs: Array<{ id: string; data: () => Record<string, unknown> }> }): T[] =>
+      snapshot.docs.map((document) => {
+        const data = document.data();
+        return { ...data, id: document.id, created_at: new Date(Number(data.createdAt ?? Date.now())).toISOString() } as T;
+      });
+    const unsubTransactions = onSnapshot(query(collection(db, 'transactions'), where('userId', '==', session.uid)), (snapshot) => {
+      setTransactions(toRecords<Transaction>(snapshot).sort((a, b) => b.created_at.localeCompare(a.created_at)));
+    });
+    const unsubItems = onSnapshot(query(collection(db, 'trackedItems'), where('userId', '==', session.uid)), (snapshot) => {
+      setItems(toRecords<Item>(snapshot).sort((a, b) => b.created_at.localeCompare(a.created_at)));
+    });
+    const unsubNotes = onSnapshot(query(collection(db, 'notes'), where('userId', '==', session.uid)), (snapshot) => {
+      setNotes(toRecords<Note>(snapshot).sort((a, b) => b.created_at.localeCompare(a.created_at)));
+    });
+    return () => { unsubTransactions(); unsubItems(); unsubNotes(); };
   }, [session]);
 
   const totals = useMemo(() => transactions.reduce((acc, t) => {
@@ -87,51 +88,52 @@ export default function App() {
 
   const signIn = async (event: FormEvent) => {
     event.preventDefault(); setBusy(true); setAuthMessage('');
-    if (!supabase) { setBusy(false); setAuthMessage('Supabase is not configured yet. Add the environment variables to enable accounts.'); return; }
-    const result = authMode === 'login'
-      ? await supabase.auth.signInWithPassword({ email, password })
-      : await supabase.auth.signUp({ email, password });
-    setBusy(false);
-    if (result.error) setAuthMessage(result.error.message);
-    else if (authMode === 'signup' && !result.data.session) setAuthMessage('Account created. Check your email to confirm your address, then sign in.');
-    else setAuthMessage('');
+    if (!auth) { setBusy(false); setAuthMessage('Firebase is not configured yet. Add the Firebase environment values described in README.md.'); return; }
+    try {
+      if (authMode === 'login') await signInWithEmailAndPassword(auth, email, password);
+      else await createUserWithEmailAndPassword(auth, email, password);
+      setAuthMessage('');
+    } catch (error) {
+      setAuthMessage(error instanceof Error ? error.message : 'Authentication failed. Please try again.');
+    } finally { setBusy(false); }
   };
 
   const saveTransaction = async (event: FormEvent) => {
     event.preventDefault(); setFormError('');
     const amount = Number(transactionForm.amount);
     if (!transactionForm.title.trim() || !Number.isFinite(amount) || amount <= 0) { setFormError('Enter a title and an amount greater than zero.'); return; }
-    if (!supabase || !session) { setFormError('Sign in after configuring Supabase to save data.'); return; }
+    if (!db || !session) { setFormError('Sign in after configuring Firebase to save data.'); return; }
     setBusy(true);
-    const result = await supabase.from('transactions').insert({ user_id: session.user.id, title: transactionForm.title.trim(), amount, currency: transactionForm.currency, kind: transactionForm.kind, category: transactionForm.category }).select().single();
-    setBusy(false);
-    if (result.error) { setFormError(result.error.message); return; }
-    setTransactions((old) => [result.data as Transaction, ...old]); setModal(null);
-    setTransactionForm({ title: '', amount: '', currency: 'IQD', kind: 'expense', category: 'General' });
+    try {
+      await addDoc(collection(db, 'transactions'), { userId: session.uid, title: transactionForm.title.trim(), amount, currency: transactionForm.currency, kind: transactionForm.kind, category: transactionForm.category, createdAt: Date.now() });
+      setModal(null); setTransactionForm({ title: '', amount: '', currency: 'IQD', kind: 'expense', category: 'General' });
+    } catch (error) { setFormError(error instanceof Error ? error.message : 'Could not save transaction.'); }
+    finally { setBusy(false); }
   };
 
   const saveItem = async (event: FormEvent) => {
     event.preventDefault(); setFormError('');
     const quantity = Number(itemForm.quantity);
     if (!itemForm.name.trim() || !Number.isInteger(quantity) || quantity < 0) { setFormError('Enter a name and a valid quantity.'); return; }
-    if (!supabase || !session) { setFormError('Sign in after configuring Supabase to save data.'); return; }
+    if (!db || !session) { setFormError('Sign in after configuring Firebase to save data.'); return; }
     setBusy(true);
-    const result = await supabase.from('tracked_items').insert({ user_id: session.user.id, name: itemForm.name.trim(), category: itemForm.category, quantity, location: itemForm.location.trim() }).select().single();
-    setBusy(false);
-    if (result.error) { setFormError(result.error.message); return; }
-    setItems((old) => [result.data as Item, ...old]); setModal(null);
-    setItemForm({ name: '', category: 'General', quantity: '1', location: '' });
+    try {
+      await addDoc(collection(db, 'trackedItems'), { userId: session.uid, name: itemForm.name.trim(), category: itemForm.category, quantity, location: itemForm.location.trim(), createdAt: Date.now() });
+      setModal(null); setItemForm({ name: '', category: 'General', quantity: '1', location: '' });
+    } catch (error) { setFormError(error instanceof Error ? error.message : 'Could not save item.'); }
+    finally { setBusy(false); }
   };
 
   const saveNote = async (event: FormEvent) => {
     event.preventDefault(); setFormError('');
     if (!noteForm.title.trim()) { setFormError('Add a title for your note.'); return; }
-    if (!supabase || !session) { setFormError('Sign in after configuring Supabase to save data.'); return; }
+    if (!db || !session) { setFormError('Sign in after configuring Firebase to save data.'); return; }
     setBusy(true);
-    const result = await supabase.from('notes').insert({ user_id: session.user.id, title: noteForm.title.trim(), body: noteForm.body.trim() }).select().single();
-    setBusy(false);
-    if (result.error) { setFormError(result.error.message); return; }
-    setNotes((old) => [result.data as Note, ...old]); setModal(null); setNoteForm({ title: '', body: '' });
+    try {
+      await addDoc(collection(db, 'notes'), { userId: session.uid, title: noteForm.title.trim(), body: noteForm.body.trim(), createdAt: Date.now() });
+      setModal(null); setNoteForm({ title: '', body: '' });
+    } catch (error) { setFormError(error instanceof Error ? error.message : 'Could not save note.'); }
+    finally { setBusy(false); }
   };
 
   if (!authReady) return <main className="loading-screen"><LoaderCircle className="spin" size={28} /><span>Opening your dashboard…</span></main>;
@@ -153,7 +155,7 @@ export default function App() {
         <button className="text-button" onClick={() => { setAuthMode(authMode === 'login' ? 'signup' : 'login'); setAuthMessage(''); }}>
           {authMode === 'login' ? 'New here? Create an account' : 'Already have an account? Sign in'}
         </button>
-        {!isSupabaseConfigured && <div className="setup-notice"><strong>Setup required</strong><span>Connect your Supabase project using the README instructions before account access is available.</span></div>}
+        {!isFirebaseConfigured && <div className="setup-notice"><strong>Setup required</strong><span>Connect your Firebase project using the README instructions before account access is available.</span></div>}
         <p className="auth-foot"><ShieldCheck size={13} /> Your records are designed to be isolated by account.</p>
       </section>
     </main>
@@ -165,7 +167,7 @@ export default function App() {
         <a className="brand" href="#" onClick={(e) => { e.preventDefault(); setTab('Overview'); }}><span className="brand-mark"><Activity size={21} /></span><span>Pannel<span className="brand-dot">.</span><small>PERSONAL DASHBOARD</small></span></a>
         <div className="nav-caption">WORKSPACE</div>
         <nav>{navItems.map(({ name, icon: Icon }) => <button key={name} className={'nav-link ' + (tab === name ? 'active' : '')} onClick={() => setTab(name)}><Icon size={18} /><span>{name}</span>{name === 'Notes' && notes.length > 0 && <span className="nav-count">{notes.length}</span>}</button>)}</nav>
-        <div className="sidebar-bottom"><div className="privacy-card"><ShieldCheck size={18} /><strong>Your space. Your data.</strong><p>Personal records, organized in one private workspace.</p><span><i /> ACCOUNT CONNECTED</span></div><div className="user-row"><div className="avatar">{session.user.email?.slice(0, 1).toUpperCase() ?? 'P'}</div><div className="user-info"><strong>{session.user.email?.split('@')[0]}</strong><span>Personal account</span></div><button className="icon-button" aria-label="Sign out" title="Sign out" onClick={() => void supabase?.auth.signOut()}><LogOut size={17} /></button></div></div>
+        <div className="sidebar-bottom"><div className="privacy-card"><ShieldCheck size={18} /><strong>Your space. Your data.</strong><p>Personal records, organized in one private workspace.</p><span><i /> ACCOUNT CONNECTED</span></div><div className="user-row"><div className="avatar">{session.email?.slice(0, 1).toUpperCase() ?? 'P'}</div><div className="user-info"><strong>{session.user.email?.split('@')[0]}</strong><span>Personal account</span></div><button className="icon-button" aria-label="Sign out" title="Sign out" onClick={() => { if (auth) void signOut(auth); }}><LogOut size={17} /></button></div></div>
       </aside>
 
       <main className="main-content">
@@ -193,7 +195,7 @@ export default function App() {
 
           {tab === 'Notes' && <section className="panel list-panel"><div className="panel-heading"><div><h3>All notes</h3><p>Search your saved thoughts and details</p></div><SearchBox value={search} onChange={setSearch} placeholder="Search notes" /></div>{filteredNotes.length ? <div className="notes-grid">{filteredNotes.map((note) => <article className="note-card" key={note.id}><div className="note-card-top"><span className="note-icon"><FileText size={17} /></span><span>{dateLabel(note.created_at)}</span></div><h3>{note.title}</h3><p>{note.body || 'No additional details.'}</p></article>)}</div> : <EmptyState icon={<FileText size={20} />} title="A place for your thoughts" text="Create notes for ideas, reminders, plans, or information you want to keep handy." action={<button className="button primary" onClick={() => setModal('note')}><Plus size={16} /> Write a note</button>} />}</section>}
 
-          {tab === 'Settings' && <div className="settings-grid"><section className="panel settings-panel"><div className="settings-icon"><ShieldCheck size={21} /></div><h3>Account & privacy</h3><p>Your account is signed in. Data access is intended to be restricted to your authenticated account using database security policies.</p><div className="settings-row"><span>Email</span><strong>{session.user.email}</strong></div><div className="settings-row"><span>Sync status</span><span className="sync-status"><i /> Connected</span></div><div className="settings-row"><span>Default currency</span><strong>IQD (USD supported)</strong></div><button className="button secondary full" onClick={() => void supabase?.auth.signOut()}><LogOut size={16} /> Sign out</button></section><section className="panel settings-panel"><div className="settings-icon blue"><Settings size={21} /></div><h3>Workspace preferences</h3><p>Pannel is optimized for mobile screens and supports larger displays.</p><div className="settings-row"><span>Appearance</span><strong>Dark Pro</strong></div><div className="settings-row"><span>Layout</span><strong>Mobile-first</strong></div><div className="settings-row"><span>Currency display</span><strong>Per-transaction currency</strong></div><div className="settings-hint">IQD and USD balances are kept separate. No automatic exchange rate is assumed.</div></section></div>}
+          {tab === 'Settings' && <div className="settings-grid"><section className="panel settings-panel"><div className="settings-icon"><ShieldCheck size={21} /></div><h3>Account & privacy</h3><p>Your account is signed in. Firestore Security Rules must restrict each record to its authenticated owner.</p><div className="settings-row"><span>Email</span><strong>{session.user.email}</strong></div><div className="settings-row"><span>Sync status</span><span className="sync-status"><i /> Connected</span></div><div className="settings-row"><span>Default currency</span><strong>IQD (USD supported)</strong></div><button className="button secondary full" onClick={() => void supabase?.auth.signOut()}><LogOut size={16} /> Sign out</button></section><section className="panel settings-panel"><div className="settings-icon blue"><Settings size={21} /></div><h3>Workspace preferences</h3><p>Pannel is optimized for mobile screens and supports larger displays.</p><div className="settings-row"><span>Appearance</span><strong>Dark Pro</strong></div><div className="settings-row"><span>Layout</span><strong>Mobile-first</strong></div><div className="settings-row"><span>Currency display</span><strong>Per-transaction currency</strong></div><div className="settings-hint">IQD and USD balances are kept separate. No automatic exchange rate is assumed.</div></section></div>}
         </div>
         <footer className="footer"><span>© {new Date().getFullYear()} Pannel Dashboard</span><span><ShieldCheck size={13} /> Your personal space</span></footer>
       </main>
