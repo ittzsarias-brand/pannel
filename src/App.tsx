@@ -17,27 +17,27 @@ import { auth, db, isFirebaseConfigured } from './lib/firebase';
 type Language = 'en' | 'ckb';
 const uiTranslations: Record<string, string> = {
   'Overview':'پوختە', 'Money':'پارە', 'Items':'کەلوپەل', 'Notes':'تێبینییەکان', 'Settings':'ڕێکخستنەکان',
-  'WORKSPACE':'شوێنی کار', 'Workspace':'شوێنی کار', 'Cloud sync enabled':'هاوکاتکردنی هەور چالاکە',
-  'YOUR PERSONAL SPACE':'شوێنی تایبەتی تۆ', 'YOUR DASHBOARD':'داشبۆردی تۆ',
-  'Good to see you.':'خۆشحاڵین بە بینینت.', 'A clearer picture of everything that matters to you.':'وێنەیەکی ڕوونتر لەو شتانەی بۆت گرنگن.',
-  'Keep your IQD and USD transactions organized.':'مامەڵەکانی IQD و USD ڕێک بخە.', 'Know what you have, and where it is.':'بزانە چی هەتە و لە کوێیە.',
-  'Your thoughts, collected in one place.':'بیرۆکەکانت لە یەک شوێندا کۆ بکەرەوە.', 'Manage your personal workspace.':'شوێنی کاری تایبەتی خۆت بەڕێوە ببە.',
+  'WORKSPACE':'بەشی کار', 'Workspace':'شوێنی کار', 'Cloud sync enabled':'هاوکاتکردنی ئۆنلاین چالاکە',
+  'YOUR PERSONAL SPACE':'شوێنی تایبەتی خۆت', 'YOUR DASHBOARD':'داشبۆردی خۆت',
+  'Good to see you.':'بەخێربێیتەوە.', 'A clearer picture of everything that matters to you.':'هەموو شتە گرنگەکانت بە ڕوونی ببینە.',
+  'Keep your IQD and USD transactions organized.':'مامەڵەکانی دینار و دۆلارت ڕێک بخە.', 'Know what you have, and where it is.':'بزانە چی هەتە و لە کوێیە.',
+  'Your thoughts, collected in one place.':'بیر و بیرۆکەکانت لە یەک شوێندا کۆ بکەرەوە.', 'Manage your personal workspace.':'شوێنی کاری تایبەتی خۆت بەڕێوەببە.',
   'Add transaction':'زیادکردنی مامەڵە', 'Add item':'زیادکردنی کەلوپەل', 'New note':'تێبینییەکی نوێ', 'Quick add':'زیادکردنی خێرا',
   'Everything in its right place.':'هەموو شتێک لە شوێنی خۆیدایە.', 'Track your finances, catalog your items, and capture your ideas.':'داراییەکانت بەدواداچوون بکە، کەلوپەلەکانت تۆمار بکە و بیرۆکەکانت بنووسە.',
   'Financial snapshot':'پوختەی دارایی', 'Tracked transactions only':'تەنها مامەڵە تۆمارکراوەکان', 'IQD balance':'باڵانسی IQD', 'USD balance':'باڵانسی USD',
-  'Items tracked':'کەلوپەلی بەدواداچوونکراو', 'Saved notes':'تێبینییە پاشەکەوتکراوەکان', 'Money activity':'چالاکی پارە', 'Recent transactions':'دوایین مامەڵەکان',
+  'Items tracked':'کەلوپەلە تۆمارکراوەکان', 'Saved notes':'تێبینییە پاشەکەوتکراوەکان', 'Money activity':'جووڵەی پارە', 'Recent transactions':'دوایین مامەڵەکان',
   'Your latest money activity':'دوایین چالاکییە داراییەکانت', 'View all':'بینینی هەمووی', 'No transactions yet':'هێشتا هیچ مامەڵەیەک نییە',
   'Your recorded income and expenses will show here.':'داهات و خەرجییە تۆمارکراوەکانت لێرە دەردەکەون.',
   'Your workspace':'شوێنی کاری تۆ', 'Everything you track':'هەموو ئەو شتانەی بەدواداچوونیان دەکەیت',
-  'Transactions':'مامەڵەکان', 'Your items':'کەلوپەلەکانت', 'All notes':'هەموو تێبینییەکان', 'Account & privacy':'هەژمار و تایبەتمەندی',
-  'Workspace preferences':'هەڵبژاردەکانی شوێنی کار', 'Email':'ئیمەیڵ', 'Sync status':'دۆخی هاوکاتکردن', 'Connected':'پەیوەستە',
-  'Default currency':'دراوی بنەڕەت', 'Appearance':'ڕووکار', 'Layout':'ڕێکخستن', 'Currency display':'پیشاندانی دراو',
-  'Sign out':'چوونەدەرەوە', 'Language':'زمان', 'English':'ئینگلیزی', 'Kurdish (Sorani)':'کوردی (سۆرانی)',
+  'Transactions':'مامەڵەکان', 'Your items':'کەلوپەلەکانت', 'All notes':'هەموو تێبینییەکان', 'Account & privacy':'هەژمار و تایبەتمەندییەکان',
+  'Workspace preferences':'هەڵبژاردەکانی شوێنی کار', 'Email':'ئیمەیڵ', 'Sync status':'دۆخی هاوکاتکردنەوە', 'Connected':'پەیوەستە',
+  'Default currency':'دراوی سەرەکی', 'Appearance':'ڕووکار', 'Layout':'ڕێکخستن', 'Currency display':'پیشاندانی دراو',
+  'Sign out':'چوونەدەرەوە', 'Language':'زمان', 'English':'ئینگلیزی', 'Kurdish (Sorani)':'کوردیی سۆرانی',
   'Personal account':'هەژماری کەسی', 'Search transactions':'گەڕان لە مامەڵەکان', 'Search items':'گەڕان لە کەلوپەلەکان', 'Search notes':'گەڕان لە تێبینییەکان',
-  'Cancel':'پاشگەزبوونەوە', 'Save':'پاشەکەوتکردن', 'Create a note':'دروستکردنی تێبینی',
+  'Cancel':'هەڵوەشاندنەوە', 'Save':'پاشەکەوتکردن', 'Create a note':'تێبینییەک دروست بکە',
   'Transaction title':'ناونیشانی مامەڵە', 'Amount':'بڕ', 'Currency':'دراو', 'Type':'جۆر', 'Category':'پۆل', 'Item name':'ناوی کەلوپەل',
   'Quantity':'ژمارە', 'Location':'شوێن', 'Note title':'ناونیشانی تێبینی', 'Details':'وردەکاری', 'optional':'ئارەزوومەندانە',
-  'Expense':'خەرجی', 'Income':'داهات', 'No matching transactions':'هیچ مامەڵەیەکی هاوتا نەدۆزرایەوە',
+  'Expense':'خەرجی', 'Income':'داهات', 'No matching transactions':'هیچ مامەڵەیەکی گونجاو نەدۆزرایەوە',
   'Your inventory starts here':'کۆگای کەلوپەلەکانت لێرە دەست پێ دەکات', 'A place for your thoughts':'شوێنێک بۆ بیرۆکەکانت',
 };
 
@@ -95,7 +95,7 @@ export default function App() {
     };
     applyTranslations();
     const observer = new MutationObserver(() => applyTranslations());
-    observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+    observer.observe(document.body, { childList: true, subtree: true });
     return () => observer.disconnect();
   }, [language]);
   const [session, setSession] = useState<User | null>(null);
