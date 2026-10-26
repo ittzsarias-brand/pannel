@@ -240,7 +240,8 @@ export default function App() {
       <main className="main-content">
 
         <div className="page-content">
-          <div className="page-heading"><h1>{tab === 'Overview' ? 'Overview' : tab}</h1>{tab !== 'Settings' && <button className="button primary" onClick={() => { setFormError(''); setModal(tab === 'Money' ? 'transaction' : tab === 'Items' ? 'item' : tab === 'Notes' ? 'note' : 'transaction'); }}><Plus size={17} /><span>{tab === 'Money' ? 'Add transaction' : tab === 'Items' ? 'Add item' : tab === 'Notes' ? 'New note' : 'Quick add'}</span></button>}</div>
+          <div className="page-toolbar">{tab !== 'Settings' && <button className="quick-add-premium" onClick={() => { setFormError(''); setModal(tab === 'Money' ? 'transaction' : tab === 'Items' ? 'item' : tab === 'Notes' ? 'note' : 'transaction'); }}><span className="quick-add-icon"><Plus size={16} /></span><span>{tab === 'Money' ? 'Add transaction' : tab === 'Items' ? 'Add item' : tab === 'Notes' ? 'New note' : 'Quick add'}</span></button>}</div>
+          <div className="page-heading"><h1>{tab === 'Overview' ? 'Overview' : tab}</h1></div>
 
           {tab === 'Overview' && <>
             <div className="section-title"><h2>Financial snapshot</h2><span>Tracked transactions only</span></div>
