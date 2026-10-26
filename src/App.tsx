@@ -34,7 +34,7 @@ const uiTranslations: Record<string, string> = {
   'Default currency':'دراوی بنەڕەت', 'Appearance':'ڕووکار', 'Layout':'ڕێکخستن', 'Currency display':'پیشاندانی دراو',
   'Sign out':'چوونەدەرەوە', 'Language':'زمان', 'English':'ئینگلیزی', 'Kurdish (Sorani)':'کوردی (سۆرانی)',
   'Personal account':'هەژماری کەسی', 'Search transactions':'گەڕان لە مامەڵەکان', 'Search items':'گەڕان لە کەلوپەلەکان', 'Search notes':'گەڕان لە تێبینییەکان',
-  'Cancel':'پاشگەزبوونەوە', 'Save':'پاشەکەوتکردن', 'Create a note':'دروستکردنی تێبینی', 'Add item':'زیادکردنی کەلوپەل',
+  'Cancel':'پاشگەزبوونەوە', 'Save':'پاشەکەوتکردن', 'Create a note':'دروستکردنی تێبینی',
   'Transaction title':'ناونیشانی مامەڵە', 'Amount':'بڕ', 'Currency':'دراو', 'Type':'جۆر', 'Category':'پۆل', 'Item name':'ناوی کەلوپەل',
   'Quantity':'ژمارە', 'Location':'شوێن', 'Note title':'ناونیشانی تێبینی', 'Details':'وردەکاری', 'optional':'ئارەزوومەندانە',
   'Expense':'خەرجی', 'Income':'داهات', 'No matching transactions':'هیچ مامەڵەیەکی هاوتا نەدۆزرایەوە',
