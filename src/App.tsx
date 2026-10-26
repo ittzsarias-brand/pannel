@@ -13,6 +13,34 @@ import {
 } from 'recharts';
 import { auth, db, isFirebaseConfigured } from './lib/firebase';
 
+
+type Language = 'en' | 'ckb';
+const uiTranslations: Record<string, string> = {
+  'Overview':'پوختە', 'Money':'پارە', 'Items':'کەلوپەل', 'Notes':'تێبینییەکان', 'Settings':'ڕێکخستنەکان',
+  'WORKSPACE':'شوێنی کار', 'Workspace':'شوێنی کار', 'Cloud sync enabled':'هاوکاتکردنی هەور چالاکە',
+  'YOUR PERSONAL SPACE':'شوێنی تایبەتی تۆ', 'YOUR DASHBOARD':'داشبۆردی تۆ',
+  'Good to see you.':'خۆشحاڵین بە بینینت.', 'A clearer picture of everything that matters to you.':'وێنەیەکی ڕوونتر لەو شتانەی بۆت گرنگن.',
+  'Keep your IQD and USD transactions organized.':'مامەڵەکانی IQD و USD ڕێک بخە.', 'Know what you have, and where it is.':'بزانە چی هەتە و لە کوێیە.',
+  'Your thoughts, collected in one place.':'بیرۆکەکانت لە یەک شوێندا کۆ بکەرەوە.', 'Manage your personal workspace.':'شوێنی کاری تایبەتی خۆت بەڕێوە ببە.',
+  'Add transaction':'زیادکردنی مامەڵە', 'Add item':'زیادکردنی کەلوپەل', 'New note':'تێبینییەکی نوێ', 'Quick add':'زیادکردنی خێرا',
+  'Everything in its right place.':'هەموو شتێک لە شوێنی خۆیدایە.', 'Track your finances, catalog your items, and capture your ideas.':'داراییەکانت بەدواداچوون بکە، کەلوپەلەکانت تۆمار بکە و بیرۆکەکانت بنووسە.',
+  'Financial snapshot':'پوختەی دارایی', 'Tracked transactions only':'تەنها مامەڵە تۆمارکراوەکان', 'IQD balance':'باڵانسی IQD', 'USD balance':'باڵانسی USD',
+  'Items tracked':'کەلوپەلی بەدواداچوونکراو', 'Saved notes':'تێبینییە پاشەکەوتکراوەکان', 'Money activity':'چالاکی پارە', 'Recent transactions':'دوایین مامەڵەکان',
+  'Your latest money activity':'دوایین چالاکییە داراییەکانت', 'View all':'بینینی هەمووی', 'No transactions yet':'هێشتا هیچ مامەڵەیەک نییە',
+  'Your recorded income and expenses will show here.':'داهات و خەرجییە تۆمارکراوەکانت لێرە دەردەکەون.',
+  'Your workspace':'شوێنی کاری تۆ', 'Everything you track':'هەموو ئەو شتانەی بەدواداچوونیان دەکەیت',
+  'Transactions':'مامەڵەکان', 'Your items':'کەلوپەلەکانت', 'All notes':'هەموو تێبینییەکان', 'Account & privacy':'هەژمار و تایبەتمەندی',
+  'Workspace preferences':'هەڵبژاردەکانی شوێنی کار', 'Email':'ئیمەیڵ', 'Sync status':'دۆخی هاوکاتکردن', 'Connected':'پەیوەستە',
+  'Default currency':'دراوی بنەڕەت', 'Appearance':'ڕووکار', 'Layout':'ڕێکخستن', 'Currency display':'پیشاندانی دراو',
+  'Sign out':'چوونەدەرەوە', 'Language':'زمان', 'English':'ئینگلیزی', 'Kurdish (Sorani)':'کوردی (سۆرانی)',
+  'Personal account':'هەژماری کەسی', 'Search transactions':'گەڕان لە مامەڵەکان', 'Search items':'گەڕان لە کەلوپەلەکان', 'Search notes':'گەڕان لە تێبینییەکان',
+  'Cancel':'پاشگەزبوونەوە', 'Save':'پاشەکەوتکردن', 'Create a note':'دروستکردنی تێبینی', 'Add item':'زیادکردنی کەلوپەل',
+  'Transaction title':'ناونیشانی مامەڵە', 'Amount':'بڕ', 'Currency':'دراو', 'Type':'جۆر', 'Category':'پۆل', 'Item name':'ناوی کەلوپەل',
+  'Quantity':'ژمارە', 'Location':'شوێن', 'Note title':'ناونیشانی تێبینی', 'Details':'وردەکاری', 'optional':'ئارەزوومەندانە',
+  'Expense':'خەرجی', 'Income':'داهات', 'No matching transactions':'هیچ مامەڵەیەکی هاوتا نەدۆزرایەوە',
+  'Your inventory starts here':'کۆگای کەلوپەلەکانت لێرە دەست پێ دەکات', 'A place for your thoughts':'شوێنێک بۆ بیرۆکەکانت',
+};
+
 type Tab = 'Overview' | 'Money' | 'Items' | 'Notes' | 'Settings';
 type Currency = 'IQD' | 'USD';
 type Transaction = { id: string; title: string; amount: number; currency: Currency; kind: 'income' | 'expense'; category: string; created_at: string };
@@ -37,6 +65,39 @@ const dateLabel = (value: string) => new Date(value).toLocaleDateString(undefine
 
 export default function App() {
   const [tab, setTab] = useState<Tab>('Overview');
+  const [language, setLanguage] = useState<Language>(() => {
+    try { return localStorage.getItem('pannel-language') === 'ckb' ? 'ckb' : 'en'; } catch { return 'en'; }
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.lang = language === 'ckb' ? 'ckb' : 'en';
+    root.dir = language === 'ckb' ? 'rtl' : 'ltr';
+    try { localStorage.setItem('pannel-language', language); } catch { /* storage may be unavailable */ }
+    const applyTranslations = () => {
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      let node: Node | null;
+      while ((node = walker.nextNode())) {
+        const value = node.nodeValue;
+        if (!value || !value.trim()) continue;
+        const trimmed = value.trim();
+        const translated = language === 'ckb' ? uiTranslations[trimmed] : Object.keys(uiTranslations).find((key) => uiTranslations[key] === trimmed);
+        if (translated) node.nodeValue = value.replace(trimmed, translated);
+      }
+      document.querySelectorAll<HTMLElement>('input, textarea, button, [aria-label], [title]').forEach((el) => {
+        for (const attr of ['placeholder', 'aria-label', 'title']) {
+          const value = el.getAttribute(attr);
+          if (!value) continue;
+          const translated = language === 'ckb' ? uiTranslations[value] : Object.keys(uiTranslations).find((key) => uiTranslations[key] === value);
+          if (translated) el.setAttribute(attr, translated);
+        }
+      });
+    };
+    applyTranslations();
+    const observer = new MutationObserver(() => applyTranslations());
+    observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+    return () => observer.disconnect();
+  }, [language]);
   const [session, setSession] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
@@ -195,7 +256,7 @@ export default function App() {
 
           {tab === 'Notes' && <section className="panel list-panel"><div className="panel-heading"><div><h3>All notes</h3><p>Search your saved thoughts and details</p></div><SearchBox value={search} onChange={setSearch} placeholder="Search notes" /></div>{filteredNotes.length ? <div className="notes-grid">{filteredNotes.map((note) => <article className="note-card" key={note.id}><div className="note-card-top"><span className="note-icon"><FileText size={17} /></span><span>{dateLabel(note.created_at)}</span></div><h3>{note.title}</h3><p>{note.body || 'No additional details.'}</p></article>)}</div> : <EmptyState icon={<FileText size={20} />} title="A place for your thoughts" text="Create notes for ideas, reminders, plans, or information you want to keep handy." action={<button className="button primary" onClick={() => setModal('note')}><Plus size={16} /> Write a note</button>} />}</section>}
 
-          {tab === 'Settings' && <div className="settings-grid"><section className="panel settings-panel"><div className="settings-icon"><ShieldCheck size={21} /></div><h3>Account & privacy</h3><p>Your account is signed in. Firestore Security Rules must restrict each record to its authenticated owner.</p><div className="settings-row"><span>Email</span><strong>{session.email}</strong></div><div className="settings-row"><span>Sync status</span><span className="sync-status"><i /> Connected</span></div><div className="settings-row"><span>Default currency</span><strong>IQD (USD supported)</strong></div><button className="button secondary full" onClick={() => { if (auth) void signOut(auth); }}><LogOut size={16} /> Sign out</button></section><section className="panel settings-panel"><div className="settings-icon blue"><Settings size={21} /></div><h3>Workspace preferences</h3><p>Pannel is optimized for mobile screens and supports larger displays.</p><div className="settings-row"><span>Appearance</span><strong>Dark Pro</strong></div><div className="settings-row"><span>Layout</span><strong>Mobile-first</strong></div><div className="settings-row"><span>Currency display</span><strong>Per-transaction currency</strong></div><div className="settings-hint">IQD and USD balances are kept separate. No automatic exchange rate is assumed.</div></section></div>}
+          {tab === 'Settings' && <div className="settings-grid"><section className="panel settings-panel"><div className="settings-icon"><ShieldCheck size={21} /></div><h3>Account & privacy</h3><p>Your account is signed in. Firestore Security Rules must restrict each record to its authenticated owner.</p><div className="settings-row"><span>Email</span><strong>{session.email}</strong></div><div className="settings-row"><span>Sync status</span><span className="sync-status"><i /> Connected</span></div><div className="settings-row"><span>Default currency</span><strong>IQD (USD supported)</strong></div><button className="button secondary full" onClick={() => { if (auth) void signOut(auth); }}><LogOut size={16} /> Sign out</button></section><section className="panel settings-panel"><div className="settings-icon blue"><Settings size={21} /></div><h3>Workspace preferences</h3><p>Pannel is optimized for mobile screens and supports larger displays.</p><div className="settings-row"><span>Language / زمان</span><select aria-label="Language" value={language} onChange={(e) => setLanguage(e.target.value as Language)}><option value="en">English</option><option value="ckb">کوردی (سۆرانی)</option></select></div><div className="settings-row"><span>Appearance</span><strong>Dark Pro</strong></div><div className="settings-row"><span>Layout</span><strong>Mobile-first</strong></div><div className="settings-row"><span>Currency display</span><strong>Per-transaction currency</strong></div><div className="settings-hint">IQD and USD balances are kept separate. No automatic exchange rate is assumed.</div></section></div>}
         </div>
         <footer className="footer"><span>© {new Date().getFullYear()} Pannel Dashboard</span><span><ShieldCheck size={13} /> Your personal space</span></footer>
       </main>
