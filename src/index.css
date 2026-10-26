@@ -361,3 +361,19 @@ input::placeholder,textarea::placeholder { color:#657286!important; }
 }
 html[dir="rtl"] .sidebar-footer { margin-left:0; margin-right:auto; }
 html[dir="rtl"] .sidebar { direction:rtl; }
+
+
+/* Align the redesign with the app's existing navigation markup */
+.sidebar nav { display:flex; flex-direction:row; align-items:center; gap:5px; margin:0; }
+.sidebar .nav-caption { display:none; }
+.sidebar-bottom { display:flex; align-items:center; gap:12px; margin-left:auto; padding-top:0; border-top:0; }
+.sidebar-bottom .user-row { margin:0; padding:0; border:0; }
+.sidebar-bottom .user-info { max-width:160px; }
+.sidebar .user-row .user-info span { color:#8b98aa; }
+.sidebar .user-row .icon-button { margin-left:4px; }
+@media (max-width:760px) {
+  .sidebar nav { order:3; width:100%; overflow-x:auto; justify-content:flex-start; }
+  .sidebar-bottom { margin-left:0; width:auto; }
+  .sidebar-bottom .user-info { display:none; }
+}
+html[dir="rtl"] .sidebar-bottom { margin-left:0; margin-right:auto; }
